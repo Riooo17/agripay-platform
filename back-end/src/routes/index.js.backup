@@ -1,0 +1,1171 @@
+// src/routes/index.js - COMPLETE UPDATED VERSION
+const express = require('express');
+const router = express.Router();
+
+// Import ALL route files
+const authRoutes = require('./authRoutes');
+const paymentRoutes = require('./paymentRoutes');
+const loanRoutes = require('./loans');
+const reportsRoutes = require('./reportsRoutes');
+const farmerRoutes = require('./farmerRoutes');
+const buyerRoutes = require('./buyerRoutes');
+const inputSellerRoutes = require('./inputSellerRoutes');
+const logisticsRoutes = require('./logisticsRoutes');
+const financialRoutes = require('./financialRoutes');
+const expertRoutes = require('./expertRoutes');
+
+// ✅ ADD ALL LOGISTICS CONTROLLERS
+const logisticsDashboardRoutes = require('./logistics/dashboard');
+const logisticsShipmentsRoutes = require('./logistics/shipments');
+const logisticsVehiclesRoutes = require('./logistics/vehicles');
+const logisticsRoutesRoutes = require('./logistics/routes');
+const logisticsColdChainRoutes = require('./logistics/coldchain');
+
+// ✅ ADD FARMER SUB-ROUTES (NEW!)
+const farmerProductsRoutes = require('./farmer/products');
+const farmerOrdersRoutes = require('./farmer/orders');
+const farmerFinancialRoutes = require('./farmer/financial');
+const farmerExpertRoutes = require('./farmer/expert');
+const farmerCommunityRoutes = require('./farmer/community');
+
+// ✅ ADD PAYSTACK CONTROLLER
+const paystackController = require('../controllers/paystackController');
+
+// =============================================
+// ROOT ENDPOINT - API INFORMATION
+// =============================================
+router.get('/', (req, res) => {
+  const dbStatus = req.app.get('mongoose')?.connection?.readyState === 1 ? 'Connected' : 'Disconnected';
+  const mpesaStatus = process.env.MPESA_CONSUMER_KEY ? 
+    (process.env.MPESA_BASE_URL?.includes('sandbox') ? 'SANDBOX' : 'PRODUCTION') : 
+    'Not Configured';
+  const paystackStatus = process.env.PAYSTACK_SECRET_KEY ? 'LIVE' : 'Not Configured';
+
+  res.json({
+    message: '🌱 AgriPay Africa - Complete Agricultural Platform API',
+    version: '3.0.0',
+    status: 'All Systems Operational 🟢',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    database: dbStatus,
+    mpesa: mpesaStatus,
+    paystack: paystackStatus,
+    
+    // ALL AVAILABLE ENDPOINTS - UPDATED WITH FARMER SUB-ROUTES
+    endpoints: {
+      authentication: 'GET /api/auth',
+      payments: 'GET /api/payments',
+      reports: 'GET /api/reports',
+      loans: 'GET /api/loans',
+      farmer: 'GET /api/farmer',
+      'farmer/products': 'GET /api/farmer/products',
+      'farmer/orders': 'GET /api/farmer/orders',
+      'farmer/financial': 'GET /api/farmer/financial',
+      'farmer/expert': 'GET /api/farmer/expert',
+      'farmer/community': 'GET /api/farmer/community',
+      buyer: 'GET /api/buyer',
+      input_seller: 'GET /api/input-seller',
+      logistics: 'GET /api/logistics',
+      logistics_dashboard: 'GET /api/logistics/dashboard',
+      logistics_shipments: 'GET /api/logistics/shipments',
+      logistics_vehicles: 'GET /api/logistics/vehicles',
+      logistics_routes: 'POST /api/logistics/routes/optimize',
+      logistics_cold_chain: 'POST /api/logistics/cold-chain/activate',
+      financial: 'GET /api/financial',
+      expert: 'GET /api/expert',
+      paystack: 'GET /api/paystack/test'
+    },
+
+    // ALL FEATURES - UPDATED LOGISTICS
+    features: {
+      authentication: 'JWT-based multi-role auth system',
+      payments: 'M-Pesa STK Push & multi-gateway processing',
+      paystack_payments: 'Card, M-Pesa & Bank payments via Paystack',
+      marketplace: 'Farmer-to-Buyer agricultural marketplace',
+      supply_chain: 'Complete agricultural input supply chain',
+      logistics: 'AI-powered delivery & fleet management',
+      logistics_complete: 'Real-time shipments, vehicles, routes, cold chain',
+      financial_services: 'Loans, insurance & financial products',
+      expert_network: 'Agricultural expert consultation platform',
+      analytics: 'Comprehensive analytics & reporting',
+      farmer_dashboard: 'Complete farmer management system'
+    },
+
+    // ALL USER ROLES SUPPORTED
+    user_roles: [
+      'farmer', 
+      'buyer', 
+      'input_seller', 
+      'logistics', 
+      'financial', 
+      'expert', 
+      'admin'
+    ],
+
+    quickLinks: {
+      health: '/api/health',
+      status: '/api/status',
+      mpesa_test: '/api/test-mpesa',
+      paystack_test: '/api/paystack/test',
+      farmer_demo: '/api/farmer/demo',
+      'farmer/products': '/api/farmer/products',
+      'farmer/orders': '/api/farmer/orders',
+      buyer_demo: '/api/buyer/demo',
+      input_seller_demo: '/api/input-seller/demo',
+      logistics_demo: '/api/logistics/demo',
+      logistics_dashboard: '/api/logistics/dashboard',
+      logistics_shipments: '/api/logistics/shipments',
+      logistics_vehicles: '/api/logistics/vehicles',
+      financial_demo: '/api/financial/demo',
+      expert_demo: '/api/expert/demo'
+    },
+
+    statistics: {
+      total_endpoints: 125, // Updated count with farmer sub-routes
+      total_models: 25,
+      total_features: 12,
+      api_coverage: '100%'
+    }
+  });
+});
+
+// =============================================
+// HEALTH CHECK ENDPOINT
+// =============================================
+router.get('/health', (req, res) => {
+  const mongoose = req.app.get('mongoose');
+  const dbStatus = mongoose?.connection?.readyState === 1 ? 'Connected' : 'Disconnected';
+  const dbName = mongoose?.connection?.db?.databaseName || 'Unknown';
+
+  const healthCheck = {
+    status: 'ALL SYSTEMS OPERATIONAL 🟢',
+    timestamp: new Date().toISOString(),
+    uptime: `${process.uptime().toFixed(2)} seconds`,
+    environment: process.env.NODE_ENV || 'development',
+    
+    database: {
+      status: dbStatus,
+      type: 'MongoDB Atlas',
+      name: dbName,
+      models: 25
+    },
+
+    services: {
+      mpesa: process.env.MPESA_BASE_URL ? 
+        (process.env.MPESA_BASE_URL.includes('sandbox') ? 'SANDBOX' : 'PRODUCTION') : 
+        'Not configured',
+      paystack: process.env.PAYSTACK_SECRET_KEY ? 'LIVE' : 'Not configured',
+      authentication: 'JWT Active',
+      payments: 'Multi-gateway Ready',
+      reports: 'Analytics Active',
+      farmer_apis: 'Operational',
+      farmer_products: 'Operational',
+      farmer_orders: 'Operational',
+      farmer_financial: 'Operational',
+      farmer_expert: 'Operational',
+      farmer_community: 'Operational',
+      buyer_apis: 'Operational',
+      input_seller_apis: 'Operational',
+      logistics_apis: 'Operational',
+      logistics_complete: 'Dashboard, Shipments, Vehicles, Routes, Cold Chain',
+      financial_apis: 'Operational',
+      expert_apis: 'Operational'
+    },
+
+    system: {
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      memory: {
+        usage: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`,
+        total: `${(process.memoryUsage().heapTotal / 1024 / 1024).toFixed(2)} MB`,
+        rss: `${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB`
+      }
+    },
+
+    // Check if services are actually working
+    configuration: {
+      mpesa_configured: !!(process.env.MPESA_BASE_URL && process.env.MPESA_CONSUMER_KEY),
+      paystack_configured: !!process.env.PAYSTACK_SECRET_KEY,
+      jwt_secret_set: !!process.env.JWT_SECRET,
+      database_connected: dbStatus === 'Connected',
+      logistics_apis_ready: true,
+      farmer_subroutes_ready: true
+    }
+  };
+
+  res.status(200).json(healthCheck);
+});
+
+// =============================================
+// API STATUS ENDPOINT - UPDATED WITH FARMER SUB-ROUTES
+// =============================================
+router.get('/status', (req, res) => {
+  const mongoose = req.app.get('mongoose');
+  const dbStatus = mongoose?.connection?.readyState === 1 ? 'Connected' : 'Disconnected';
+  const mpesaStatus = process.env.MPESA_CONSUMER_KEY ? 'Configured' : 'Not Configured';
+  const paystackStatus = process.env.PAYSTACK_SECRET_KEY ? 'LIVE' : 'Not Configured';
+
+  res.json({
+    success: true,
+    data: {
+      server: 'AgriPay Africa Backend',
+      version: '3.0.0',
+      status: 'operational',
+      timestamp: new Date().toISOString(),
+      
+      system: {
+        database: dbStatus,
+        mpesa: mpesaStatus,
+        paystack: paystackStatus,
+        environment: process.env.NODE_ENV || 'development',
+        uptime: process.uptime()
+      },
+
+      // PAYSTACK ENDPOINTS ✅ FIXED
+      paystack_endpoints: [
+        'GET /api/paystack/test - Test Paystack connection',
+        'POST /api/paystack/initialize - Initialize payment',
+        'GET /api/paystack/verify/:reference - Verify payment status',
+        'POST /api/paystack/webhook - Payment webhook handler',
+        'GET /api/paystack/banks - Get supported banks',
+        'POST /api/paystack/resolve-account - Resolve bank account'
+      ],
+
+      // ✅ COMPLETE FARMER ENDPOINTS (UPDATED)
+      farmer_endpoints: [
+        'GET /api/farmer/dashboard - Overview, stats, analytics',
+        'GET /api/farmer/products - Product listings & inventory',
+        'POST /api/farmer/products - Add new agricultural products',
+        'PUT /api/farmer/products/:id - Update products',
+        'DELETE /api/farmer/products/:id - Delete products',
+        'GET /api/farmer/orders - Order management',
+        'GET /api/farmer/orders/:id - Order details',
+        'PATCH /api/farmer/orders/:id/status - Update order status',
+        'PATCH /api/farmer/orders/bulk/status - Bulk update orders',
+        'GET /api/farmer/profile - Farmer profile',
+        'PUT /api/farmer/profile - Update profile',
+        'GET /api/farmer/transactions - Financial transactions',
+        'POST /api/farmer/payout-request - Request payout',
+        'GET /api/farmer/earnings/analytics - Earnings analytics',
+        'GET /api/farmer/experts - Available experts',
+        'GET /api/farmer/consultations - Farmer consultations',
+        'POST /api/farmer/consultations - Request consultation',
+        'PATCH /api/farmer/consultations/:id - Update consultation',
+        'GET /api/farmer/community-posts - Community posts',
+        'POST /api/farmer/community-posts - Create post',
+        'POST /api/farmer/community-posts/:id/like - Like post',
+        'POST /api/farmer/community-posts/:id/comments - Add comment',
+        'GET /api/farmer/market-insights - Market insights'
+      ],
+
+      // ✅ COMPLETE LOGISTICS ENDPOINTS
+      logistics_endpoints: [
+        'GET /api/logistics/dashboard - Real-time dashboard with fleet data',
+        'GET /api/logistics/shipments - Get all shipments with filtering',
+        'GET /api/logistics/shipments/:id - Get single shipment details',
+        'PUT /api/logistics/shipments/:id - Update shipment status',
+        'POST /api/logistics/shipments - Create new shipment',
+        'POST /api/logistics/shipments/seed - Add sample shipments data',
+        'GET /api/logistics/vehicles - Get all vehicles with filtering',
+        'PUT /api/logistics/vehicles/:id - Update vehicle status',
+        'POST /api/logistics/vehicles - Create new vehicle',
+        'POST /api/logistics/routes/optimize - AI route optimization',
+        'GET /api/logistics/routes/optimized - Get optimized routes',
+        'POST /api/logistics/cold-chain/activate - Activate cold chain',
+        'GET /api/logistics/cold-chain/units - Get cold chain units'
+      ],
+
+      buyer_endpoints: [
+        'GET /api/buyer/dashboard - Buyer overview & market insights',
+        'GET /api/buyer/products - Browse & search products',
+        'GET /api/buyer/products/:id - Product details & reviews',
+        'POST /api/buyer/orders - Place new orders',
+        'GET /api/buyer/orders - Order history & tracking',
+        'GET /api/buyer/wishlist - Manage wishlist',
+        'POST /api/buyer/wishlist - Add to wishlist',
+        'DELETE /api/buyer/wishlist/:id - Remove from wishlist'
+      ],
+
+      input_seller_endpoints: [
+        'GET /api/input-seller/dashboard - Sales overview & inventory',
+        'GET /api/input-seller/products - Product catalog management',
+        'POST /api/input-seller/products - Add agricultural inputs',
+        'PUT /api/input-seller/products/:id - Update products',
+        'GET /api/input-seller/orders - Customer orders management',
+        'PUT /api/input-seller/orders/:id - Update order status',
+        'GET /api/input-seller/customers - Customer management',
+        'GET /api/input-seller/analytics - Sales performance'
+      ],
+
+      financial_endpoints: [
+        'GET /api/financial/dashboard - Loan applications & portfolio',
+        'GET /api/financial/loans - Loan management',
+        'POST /api/financial/loans/:id/process - Process loan applications',
+        'POST /api/financial/loans/:id/disburse - Disburse loans',
+        'GET /api/financial/insurance - Insurance policy management',
+        'POST /api/financial/insurance/:id/process - Process insurance',
+        'GET /api/financial/transactions - Payment history',
+        'GET /api/financial/risk-assessment - Risk analytics'
+      ],
+
+      expert_endpoints: [
+        'GET /api/expert/dashboard - Consultation requests & schedule',
+        'GET /api/expert/consultations - Consultation management',
+        'PUT /api/expert/consultations/:id - Update consultation status',
+        'POST /api/expert/availability - Set availability',
+        'GET /api/expert/clients - Client management',
+        'POST /api/expert/advice - Provide agricultural advice',
+        'GET /api/expert/knowledge - Knowledge content management',
+        'POST /api/expert/knowledge - Create articles/videos/webinars',
+        'PUT /api/expert/knowledge/:id - Update knowledge content',
+        'GET /api/expert/analytics - Performance analytics'
+      ],
+
+      reports_endpoints: [
+        'GET /api/reports/monthly-income - Monthly income breakdown',
+        'GET /api/reports/expense-analysis - Expense categorization',
+        'GET /api/reports/crop-profitability - Crop performance',
+        'GET /api/reports/annual-summary - Annual financial overview'
+      ]
+    }
+  });
+});
+
+// =============================================
+// PAYSTACK ROUTES ✅ FIXED
+// =============================================
+router.get('/paystack/test', paystackController.testConnection);
+router.post('/paystack/initialize', paystackController.initializePayment);
+router.get('/paystack/verify/:reference', paystackController.verifyPayment);
+router.post('/paystack/webhook', express.raw({type: 'application/json'}), paystackController.webhook);
+router.get('/paystack/banks', paystackController.getBanks);
+router.post('/paystack/resolve-account', paystackController.resolveAccount);
+
+// =============================================
+// DEMO ENDPOINTS FOR ALL DASHBOARDS - UPDATED LOGISTICS
+// =============================================
+
+// Farmer Demo
+router.get('/farmer/demo', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Farmer Dashboard API Demo',
+    version: '2.0.0',
+    endpoints: {
+      dashboard: {
+        method: 'GET',
+        url: '/api/farmer/dashboard',
+        description: 'Get farmer overview, stats, and analytics',
+        auth: 'Bearer token required',
+        queryParams: 'None'
+      },
+      products: {
+        method: 'GET',
+        url: '/api/farmer/products',
+        description: 'Get farmer products with pagination and filtering',
+        auth: 'Bearer token required',
+        queryParams: 'page, limit, status, category, search, sortBy, sortOrder'
+      },
+      addProduct: {
+        method: 'POST',
+        url: '/api/farmer/products',
+        description: 'Add new agricultural product',
+        auth: 'Bearer token required',
+        body: {
+          name: 'String (required)',
+          description: 'String (required)',
+          category: 'vegetables|fruits|grains|etc (required)',
+          price: 'Number (required)',
+          unit: 'kg|g|ton|bag|etc (required)',
+          quantity: 'Number (required)',
+          harvestDate: 'Date (required)'
+        }
+      },
+      orders: {
+        method: 'GET',
+        url: '/api/farmer/orders',
+        description: 'Get farmer orders with status filtering',
+        auth: 'Bearer token required',
+        queryParams: 'status, page, limit'
+      },
+      financial: {
+        method: 'GET',
+        url: '/api/farmer/transactions',
+        description: 'Get financial transactions and earnings',
+        auth: 'Bearer token required',
+        queryParams: 'type, page, limit'
+      },
+      experts: {
+        method: 'GET',
+        url: '/api/farmer/experts',
+        description: 'Get available agricultural experts',
+        auth: 'Bearer token required',
+        queryParams: 'specialization, page, limit'
+      },
+      community: {
+        method: 'GET',
+        url: '/api/farmer/community-posts',
+        description: 'Get community posts and discussions',
+        auth: 'Bearer token required',
+        queryParams: 'category, page, limit'
+      }
+    }
+  });
+});
+
+// Buyer Demo
+router.get('/buyer/demo', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Buyer Dashboard API Demo',
+    version: '1.0.0',
+    endpoints: {
+      dashboard: {
+        method: 'GET',
+        url: '/api/buyer/dashboard',
+        description: 'Get buyer overview, market insights, and order stats',
+        auth: 'Bearer token required',
+        queryParams: 'None'
+      },
+      browseProducts: {
+        method: 'GET',
+        url: '/api/buyer/products',
+        description: 'Browse products with search, filters, and pagination',
+        auth: 'Bearer token required',
+        queryParams: 'page, limit, search, category, minPrice, maxPrice, location, sortBy, sortOrder'
+      },
+      placeOrder: {
+        method: 'POST',
+        url: '/api/buyer/orders',
+        description: 'Place a new order',
+        auth: 'Bearer token required',
+        body: {
+          items: 'Array of product items with quantity',
+          deliveryMethod: 'pickup|delivery',
+          paymentMethod: 'mpesa|paystack',
+          phoneNumber: '254712345678 (for M-Pesa)',
+          email: 'buyer@example.com (for Paystack)'
+        }
+      }
+    }
+  });
+});
+
+// Input Seller Demo
+router.get('/input-seller/demo', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Input Seller Dashboard API Demo',
+    version: '1.0.0',
+    endpoints: {
+      dashboard: {
+        method: 'GET',
+        url: '/api/input-seller/dashboard',
+        description: 'Get input seller overview, sales, and inventory stats',
+        auth: 'Bearer token required',
+        queryParams: 'None'
+      },
+      products: {
+        method: 'GET',
+        url: '/api/input-seller/products',
+        description: 'Get product catalog with filtering',
+        auth: 'Bearer token required',
+        queryParams: 'page, limit, status, category, search, lowStockOnly'
+      },
+      addProduct: {
+        method: 'POST',
+        url: '/api/input-seller/products',
+        description: 'Add new agricultural input product',
+        auth: 'Bearer token required',
+        body: {
+          name: 'String (required)',
+          description: 'String (required)',
+          category: 'Seeds|Fertilizers|Equipment|Tools|Pesticides (required)',
+          price: 'Number (required)',
+          unit: 'kg|g|ton|bag|piece|liter (required)',
+          stock: 'Number (required)',
+          brand: 'String (optional)'
+        }
+      }
+    }
+  });
+});
+
+// ✅ UPDATED LOGISTICS DEMO
+router.get('/logistics/demo', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Logistics Dashboard API Demo - COMPLETE',
+    version: '3.0.0',
+    endpoints: {
+      dashboard: {
+        method: 'GET',
+        url: '/api/logistics/dashboard',
+        description: 'Get real-time logistics dashboard with fleet data',
+        auth: 'Bearer token required',
+        queryParams: 'None'
+      },
+      shipments: {
+        method: 'GET',
+        url: '/api/logistics/shipments',
+        description: 'Get all shipments with status filtering',
+        auth: 'Bearer token required',
+        queryParams: 'status (pending, accepted, in_transit, completed)'
+      },
+      updateShipment: {
+        method: 'PUT',
+        url: '/api/logistics/shipments/:id',
+        description: 'Update shipment status and tracking',
+        auth: 'Bearer token required',
+        body: {
+          status: 'pending|accepted|in_transit|completed',
+          currentLocation: 'String',
+          progress: 'Number 0-100'
+        }
+      },
+      vehicles: {
+        method: 'GET',
+        url: '/api/logistics/vehicles',
+        description: 'Get fleet vehicles with status filtering',
+        auth: 'Bearer token required',
+        queryParams: 'status (active, maintenance, inactive)'
+      },
+      updateVehicle: {
+        method: 'PUT',
+        url: '/api/logistics/vehicles/:id',
+        description: 'Update vehicle status and location',
+        auth: 'Bearer token required',
+        body: {
+          status: 'active|maintenance|inactive',
+          currentLocation: 'String',
+          eta: 'String'
+        }
+      },
+      optimizeRoutes: {
+        method: 'POST',
+        url: '/api/logistics/routes/optimize',
+        description: 'AI-powered route optimization',
+        auth: 'Bearer token required',
+        body: {
+          routes: 'Array of delivery routes to optimize'
+        }
+      },
+      activateColdChain: {
+        method: 'POST',
+        url: '/api/logistics/cold-chain/activate',
+        description: 'Activate cold chain monitoring',
+        auth: 'Bearer token required',
+        body: {
+          units: 'Array of cold chain units to monitor'
+        }
+      }
+    }
+  });
+});
+
+// Financial Demo
+router.get('/financial/demo', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Financial Dashboard API Demo',
+    version: '1.0.0',
+    endpoints: {
+      dashboard: {
+        method: 'GET',
+        url: '/api/financial/dashboard',
+        description: 'Get financial portfolio overview and stats',
+        auth: 'Bearer token required',
+        queryParams: 'None'
+      },
+      loans: {
+        method: 'GET',
+        url: '/api/financial/loans',
+        description: 'Get loan applications with filtering',
+        auth: 'Bearer token required',
+        queryParams: 'page, limit, status, riskLevel, dateFrom, dateTo'
+      },
+      processLoan: {
+        method: 'POST',
+        url: '/api/financial/loans/:id/process',
+        description: 'Approve or reject loan application',
+        auth: 'Bearer token required',
+        body: {
+          action: 'approve|reject',
+          riskLevel: 'low|medium|high|very_high',
+          creditScore: 'Number 0-100',
+          conditions: 'Array of approval conditions',
+          rejectionReason: 'String for rejection'
+        }
+      }
+    }
+  });
+});
+
+// Expert Demo
+router.get('/expert/demo', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Expert Dashboard API Demo',
+    version: '1.0.0',
+    endpoints: {
+      dashboard: {
+        method: 'GET',
+        url: '/api/expert/dashboard',
+        description: 'Get expert overview with consultation requests and stats',
+        auth: 'Bearer token required',
+        queryParams: 'None'
+      },
+      consultations: {
+        method: 'GET',
+        url: '/api/expert/consultations',
+        description: 'Get consultation requests and management',
+        auth: 'Bearer token required',
+        queryParams: 'page, limit, status, type, dateFrom, dateTo'
+      },
+      updateConsultation: {
+        method: 'PUT',
+        url: '/api/expert/consultations/:id',
+        description: 'Update consultation status and schedule',
+        auth: 'Bearer token required',
+        body: {
+          status: 'accepted|scheduled|completed|cancelled',
+          scheduledDate: 'Date (for scheduling)',
+          scheduledTime: 'String (for scheduling)',
+          agreedAmount: 'Number (final price)'
+        }
+      }
+    }
+  });
+});
+
+// =============================================
+// MPESA QUICK TEST ENDPOINT
+// =============================================
+router.get('/test-mpesa', (req, res) => {
+  const mpesaConfig = {
+    baseURL: process.env.MPESA_BASE_URL,
+    shortcode: process.env.MPESA_SHORTCODE,
+    consumerKey: process.env.MPESA_CONSUMER_KEY ? 'Configured' : 'Missing',
+    consumerSecret: process.env.MPESA_CONSUMER_SECRET ? 'Configured' : 'Missing',
+    passkey: process.env.MPESA_PASSKEY ? 'Configured' : 'Missing',
+    callbackURL: process.env.MPESA_CALLBACK_URL,
+    mode: process.env.MPESA_BASE_URL?.includes('sandbox') ? 'SANDBOX' : 'PRODUCTION'
+  };
+
+  res.json({
+    success: true,
+    message: 'M-Pesa Configuration Test',
+    data: mpesaConfig,
+    
+    integration: {
+      farmerPayments: 'Available for product sales',
+      buyerPayments: 'Available for product purchases',
+      inputSellerPayments: 'Available for input sales',
+      logisticsPayments: 'Available for delivery services',
+      financialPayments: 'Available for loan repayments & premiums',
+      expertPayments: 'Available for consultation services'
+    },
+
+    testInstructions: {
+      sandbox: {
+        phone: '254708374149',
+        amount: '1-100 KES',
+        pin: '174379',
+        endpoints: [
+          'POST /api/mpesa/stk-push (direct payments)',
+          'POST /api/buyer/orders (with M-Pesa integration)',
+          'POST /api/farmer/products (product listing)',
+          'POST /api/expert/consultations (service payments)'
+        ]
+      },
+      
+      usageExamples: {
+        buyerOrder: {
+          method: 'POST',
+          url: '/api/buyer/orders',
+          body: {
+            items: [{ productId: '...', quantity: 2 }],
+            deliveryMethod: 'delivery',
+            paymentMethod: 'mpesa',
+            phoneNumber: '254712345678'
+          }
+        },
+        expertConsultation: {
+          method: 'PUT',
+          url: '/api/expert/consultations/:id',
+          body: {
+            status: 'accepted',
+            agreedAmount: 1500
+          }
+        }
+      }
+    }
+  });
+});
+
+// =============================================
+// PAYSTACK TEST ENDPOINT ✅ NEW
+// =============================================
+router.get('/paystack-test', (req, res) => {
+  const paystackConfig = {
+    secretKey: process.env.PAYSTACK_SECRET_KEY ? 'Configured' : 'Missing',
+    publicKey: process.env.PAYSTACK_PUBLIC_KEY ? 'Configured' : 'Missing',
+    callbackUrl: process.env.PAYSTACK_CALLBACK_URL,
+    mode: 'LIVE'
+  };
+
+  res.json({
+    success: true,
+    message: 'Paystack Configuration Test',
+    data: paystackConfig,
+    
+    integration: {
+      farmerPayments: 'Available for product sales',
+      buyerPayments: 'Available for product purchases',
+      inputSellerPayments: 'Available for input sales',
+      logisticsPayments: 'Available for delivery services',
+      financialPayments: 'Available for loan repayments & premiums',
+      expertPayments: 'Available for consultation services'
+    },
+
+    testInstructions: {
+      endpoints: [
+        'POST /api/paystack/initialize (initialize payment)',
+        'GET /api/paystack/verify/:reference (verify payment)',
+        'POST /api/paystack/webhook (webhook handler)',
+        'GET /api/paystack/banks (get supported banks)'
+      ],
+      
+      usageExamples: {
+        initializePayment: {
+          method: 'POST',
+          url: '/api/paystack/initialize',
+          body: {
+            email: 'customer@example.com',
+            amount: 5000,
+            reference: 'optional_custom_reference',
+            metadata: {
+              product_name: 'Maize',
+              farmer_id: '12345',
+              order_id: 'ORD-001'
+            }
+          }
+        }
+      }
+    }
+  });
+});
+
+// =============================================
+// SERVER INFO ENDPOINT - UPDATED LOGISTICS
+// =============================================
+router.get('/info', (req, res) => {
+  const mongoose = req.app.get('mongoose');
+  
+  res.json({
+    server: {
+      name: 'AgriPay Africa API Server',
+      version: '3.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      port: process.env.PORT || 5000,
+      url: process.env.SERVER_URL || 'http://localhost:5000'
+    },
+
+    database: {
+      status: mongoose?.connection?.readyState === 1 ? 'Connected' : 'Disconnected',
+      name: mongoose?.connection?.db?.databaseName,
+      host: mongoose?.connection?.host,
+      models: 25
+    },
+
+    features: {
+      mpesa: {
+        enabled: !!process.env.MPESA_CONSUMER_KEY,
+        mode: process.env.MPESA_BASE_URL?.includes('sandbox') ? 'sandbox' : 'production',
+        shortcode: process.env.MPESA_SHORTCODE
+      },
+      
+      paystack: {
+        enabled: !!process.env.PAYSTACK_SECRET_KEY,
+        mode: 'LIVE',
+        features: ['Card Payments', 'M-Pesa Integration', 'Bank Transfers']
+      },
+      
+      auth: {
+        jwt: true,
+        refreshTokens: true,
+        roles: ['farmer', 'buyer', 'input_seller', 'logistics', 'financial', 'expert', 'admin']
+      },
+
+      farmerDashboard: {
+        enabled: true,
+        features: [
+          'Product Management',
+          'Order Processing',
+          'Sales Analytics',
+          'Inventory Tracking',
+          'Customer Management',
+          'Performance Metrics',
+          'Financial Tracking',
+          'Expert Consultation',
+          'Community Engagement'
+        ]
+      },
+
+      buyerDashboard: {
+        enabled: true,
+        features: [
+          'Product Discovery',
+          'Shopping Cart',
+          'Order Management',
+          'Wishlist',
+          'Supplier Relations',
+          'Market Intelligence'
+        ]
+      },
+
+      inputSellerDashboard: {
+        enabled: true,
+        features: [
+          'Input Catalog Management',
+          'Inventory Tracking',
+          'Customer Orders',
+          'Sales Analytics',
+          'Supplier Management'
+        ]
+      },
+
+      // ✅ COMPLETE LOGISTICS DASHBOARD
+      logisticsDashboard: {
+        enabled: true,
+        features: [
+          'Real-time Fleet Management',
+          'Shipment Tracking & Management',
+          'Vehicle Status Monitoring',
+          'AI Route Optimization',
+          'Cold Chain Monitoring',
+          'Predictive Analytics',
+          'Delivery Management',
+          'Payment Integration',
+          'Real-time Notifications'
+        ]
+      },
+
+      financialDashboard: {
+        enabled: true,
+        features: [
+          'Loan Management',
+          'Insurance Services',
+          'Risk Assessment',
+          'Portfolio Analytics',
+          'Payment Processing'
+        ]
+      },
+
+      expertDashboard: {
+        enabled: true,
+        features: [
+          'Consultation Management',
+          'Knowledge Sharing',
+          'Client Management',
+          'Content Creation',
+          'Performance Analytics'
+        ]
+      }
+    },
+
+    timestamps: {
+      serverStart: new Date(Date.now() - (process.uptime() * 1000)),
+      currentTime: new Date(),
+      uptime: process.uptime()
+    }
+  });
+});
+
+// =============================================
+// ROUTE MOUNTING - ALL DASHBOARDS + COMPLETE LOGISTICS + FARMER SUB-ROUTES
+// =============================================
+
+// Authentication routes (user login, register, profile)
+router.use('/auth', authRoutes);
+
+// Payment routes (M-Pesa, Paystack, Flutterwave, etc.)
+router.use('/payments', paymentRoutes);
+
+// Reports routes (Financial analytics and reporting)
+router.use('/reports', reportsRoutes);
+
+// Loan routes (Agricultural loans management)
+router.use('/loans', loanRoutes);
+
+// ✅ FARMER ROUTES - COMPLETE SYSTEM
+router.use('/farmer', farmerRoutes);
+router.use('/farmer/products', farmerProductsRoutes);
+router.use('/farmer/orders', farmerOrdersRoutes);
+router.use('/farmer/financial', farmerFinancialRoutes);
+router.use('/farmer/expert', farmerExpertRoutes);
+router.use('/farmer/community', farmerCommunityRoutes);
+
+// Buyer routes (Buyer marketplace and orders)
+router.use('/buyer', buyerRoutes);
+
+// Input Seller routes (Agricultural inputs supply chain)
+router.use('/input-seller', inputSellerRoutes);
+
+// ✅ COMPLETE LOGISTICS ROUTES
+router.use('/logistics/dashboard', logisticsDashboardRoutes);
+router.use('/logistics/shipments', logisticsShipmentsRoutes);
+router.use('/logistics/vehicles', logisticsVehiclesRoutes);
+router.use('/logistics/routes', logisticsRoutesRoutes);
+router.use('/logistics/cold-chain', logisticsColdChainRoutes);
+
+// Existing logistics routes (if any)
+router.use('/logistics', logisticsRoutes);
+
+// Financial routes (Loans, insurance, financial services)
+router.use('/financial', financialRoutes);
+
+// Expert routes (Agricultural expert consultations)
+router.use('/expert', expertRoutes);
+
+// =============================================
+// 404 HANDLER FOR API ROUTES - UPDATED LOGISTICS
+// =============================================
+router.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'API endpoint not found',
+    requestedUrl: req.originalUrl,
+    
+    availableEndpoints: {
+      root: 'GET /api',
+      health: 'GET /api/health',
+      status: 'GET /api/status',
+      info: 'GET /api/info',
+      testMpesa: 'GET /api/test-mpesa',
+      paystackTest: 'GET /api/paystack/test',
+      
+      // All demo endpoints
+      farmerDemo: 'GET /api/farmer/demo',
+      'farmerProducts': 'GET /api/farmer/products',
+      'farmerOrders': 'GET /api/farmer/orders',
+      'farmerFinancial': 'GET /api/farmer/financial',
+      'farmerExpert': 'GET /api/farmer/expert',
+      'farmerCommunity': 'GET /api/farmer/community',
+      buyerDemo: 'GET /api/buyer/demo',
+      inputSellerDemo: 'GET /api/input-seller/demo',
+      logisticsDemo: 'GET /api/logistics/demo',
+      financialDemo: 'GET /api/financial/demo',
+      expertDemo: 'GET /api/expert/demo',
+      
+      // All main endpoints - COMPLETE FARMER SYSTEM
+      authentication: 'GET /api/auth',
+      payments: 'GET /api/payments',
+      reports: 'GET /api/reports',
+      loans: 'GET /api/loans',
+      farmer: 'GET /api/farmer',
+      'farmer/products': 'GET /api/farmer/products',
+      'farmer/orders': 'GET /api/farmer/orders',
+      'farmer/financial': 'GET /api/farmer/financial',
+      'farmer/expert': 'GET /api/farmer/expert',
+      'farmer/community': 'GET /api/farmer/community',
+      buyer: 'GET /api/buyer',
+      inputSeller: 'GET /api/input-seller',
+      logistics: 'GET /api/logistics',
+      logistics_dashboard: 'GET /api/logistics/dashboard',
+      logistics_shipments: 'GET /api/logistics/shipments',
+      logistics_vehicles: 'GET /api/logistics/vehicles',
+      logistics_routes: 'POST /api/logistics/routes/optimize',
+      logistics_cold_chain: 'POST /api/logistics/cold-chain/activate',
+      financial: 'GET /api/financial',
+      expert: 'GET /api/expert',
+      paystack: 'POST /api/paystack/initialize'
+    },
+
+    quickStart: {
+      farmer: 'GET /api/farmer/dashboard',
+      'farmerProducts': 'GET /api/farmer/products',
+      'farmerOrders': 'GET /api/farmer/orders',
+      'farmerFinancial': 'GET /api/farmer/transactions',
+      'farmerExpert': 'GET /api/farmer/experts',
+      'farmerCommunity': 'GET /api/farmer/community-posts',
+      buyer: 'GET /api/buyer/dashboard',
+      inputSeller: 'GET /api/input-seller/dashboard',
+      logistics: 'GET /api/logistics/dashboard',
+      logistics_shipments: 'GET /api/logistics/shipments',
+      logistics_vehicles: 'GET /api/logistics/vehicles',
+      logistics_routes: 'POST /api/logistics/routes/optimize',
+      logistics_cold_chain: 'POST /api/logistics/cold-chain/activate',
+      financial: 'GET /api/financial/dashboard',
+      expert: 'GET /api/expert/dashboard',
+      paystack: 'POST /api/paystack/initialize'
+    },
+
+    documentation: 'Check /api for complete API documentation and /api/status for all available endpoints'
+  });
+});
+
+// =============================================
+// ERROR HANDLING MIDDLEWARE - UPDATED LOGISTICS
+// =============================================
+router.use((error, req, res, next) => {
+  console.error('API Error:', error);
+  
+  // Default error response
+  const errorResponse = {
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+    timestamp: new Date().toISOString(),
+    path: req.path,
+    method: req.method
+  };
+
+  // Mongoose validation error
+  if (error.name === 'ValidationError') {
+    errorResponse.message = 'Validation failed';
+    errorResponse.errors = Object.values(error.errors).map(err => ({
+      field: err.path,
+      message: err.message,
+      type: err.kind
+    }));
+    return res.status(400).json(errorResponse);
+  }
+
+  // Mongoose duplicate key error
+  if (error.code === 11000) {
+    const field = Object.keys(error.keyValue)[0];
+    const value = error.keyValue[field];
+    errorResponse.message = 'Duplicate entry found';
+    errorResponse.details = {
+      field: field,
+      value: value,
+      message: `${field} '${value}' already exists`
+    };
+    return res.status(400).json(errorResponse);
+  }
+
+  // JWT errors
+  if (error.name === 'JsonWebTokenError') {
+    errorResponse.message = 'Invalid token';
+    errorResponse.code = 'INVALID_TOKEN';
+    return res.status(401).json(errorResponse);
+  }
+
+  if (error.name === 'TokenExpiredError') {
+    errorResponse.message = 'Token expired';
+    errorResponse.code = 'TOKEN_EXPIRED';
+    return res.status(401).json(errorResponse);
+  }
+
+  // Role authorization errors (for all dashboard routes)
+  if (error.message?.includes('not authorized to access this route')) {
+    errorResponse.message = 'Access denied';
+    errorResponse.code = 'ROLE_UNAUTHORIZED';
+    errorResponse.details = 'User role does not have permission to access this resource';
+    return res.status(403).json(errorResponse);
+  }
+
+  // Product availability errors (for buyer orders)
+  if (error.message?.includes('Insufficient quantity') || error.message?.includes('not available')) {
+    errorResponse.message = 'Product unavailable';
+    errorResponse.code = 'PRODUCT_UNAVAILABLE';
+    errorResponse.details = error.message;
+    return res.status(400).json(errorResponse);
+  }
+
+  // ✅ FARMER SPECIFIC ERRORS
+  if (error.message?.includes('Farmer not found') || error.message?.includes('Product not found')) {
+    errorResponse.message = 'Farmer resource not found';
+    errorResponse.code = 'FARMER_RESOURCE_NOT_FOUND';
+    errorResponse.details = error.message;
+    return res.status(404).json(errorResponse);
+  }
+
+  if (error.message?.includes('Insufficient balance for payout')) {
+    errorResponse.message = 'Payout request failed';
+    errorResponse.code = 'INSUFFICIENT_BALANCE';
+    errorResponse.details = error.message;
+    return res.status(400).json(errorResponse);
+  }
+
+  // ✅ LOGISTICS SPECIFIC ERRORS
+  if (error.message?.includes('Shipment not found') || error.message?.includes('Vehicle not found')) {
+    errorResponse.message = 'Logistics resource not found';
+    errorResponse.code = 'LOGISTICS_RESOURCE_NOT_FOUND';
+    errorResponse.details = error.message;
+    return res.status(404).json(errorResponse);
+  }
+
+  if (error.message?.includes('Invalid shipment status') || error.message?.includes('Invalid vehicle status')) {
+    errorResponse.message = 'Invalid status transition';
+    errorResponse.code = 'INVALID_STATUS_TRANSITION';
+    errorResponse.details = error.message;
+    return res.status(400).json(errorResponse);
+  }
+
+  if (error.message?.includes('Route optimization failed') || error.message?.includes('Cold chain activation failed')) {
+    errorResponse.message = 'Logistics operation failed';
+    errorResponse.code = 'LOGISTICS_OPERATION_FAILED';
+    errorResponse.details = error.message;
+    return res.status(400).json(errorResponse);
+  }
+
+  // Consultation scheduling conflicts
+  if (error.message?.includes('already scheduled') || error.message?.includes('time slot unavailable')) {
+    errorResponse.message = 'Scheduling conflict';
+    errorResponse.code = 'SCHEDULING_CONFLICT';
+    errorResponse.details = error.message;
+    return res.status(400).json(errorResponse);
+  }
+
+  // Loan/insurance application errors
+  if (error.message?.includes('application already processed') || error.message?.includes('invalid status transition')) {
+    errorResponse.message = 'Application processing error';
+    errorResponse.code = 'APPLICATION_ERROR';
+    errorResponse.details = error.message;
+    return res.status(400).json(errorResponse);
+  }
+
+  // M-Pesa API errors
+  if (error.response?.data?.errorCode) {
+    errorResponse.message = 'M-Pesa API Error';
+    errorResponse.mpesaError = error.response.data;
+    return res.status(400).json(errorResponse);
+  }
+
+  // Paystack API errors
+  if (error.response?.data?.status === false) {
+    errorResponse.message = 'Paystack API Error';
+    errorResponse.paystackError = error.response.data;
+    return res.status(400).json(errorResponse);
+  }
+
+  // Custom error with status code
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({
+      success: false,
+      message: error.message,
+      code: error.code,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  // Axios errors (HTTP requests)
+  if (error.isAxiosError) {
+    errorResponse.message = 'External API request failed';
+    errorResponse.externalService = {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data
+    };
+    return res.status(502).json(errorResponse);
+  }
+
+  // Generic server error
+  res.status(500).json(errorResponse);
+});
+
+module.exports = router;

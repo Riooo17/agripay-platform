@@ -1,0 +1,57 @@
+{
+  "successStories": [
+    {
+      "id": 1,
+      "farmer": "John Kamau",
+      "location": "Nakuru, Kenya",
+      "crop": "Maize",
+      "revenueIncrease": "45%",
+      "loanAmount": "KES 150,000",
+      "repaymentRate": "98%",
+      "duration": "6 months",
+      "testimonial": "AgriPay helped me expand my farm and increase yields significantly."
+    },
+    {
+      "id": 2,
+      "farmer": "Mary Wanjiku",
+      "location": "Meru, Kenya",
+      "crop": "Coffee",
+      "revenueIncrease": "62%",
+      "loanAmount": "KES 85,000",
+      "repaymentRate": "100%",
+      "duration": "4 months",
+      "testimonial": "The mobile lending process was seamless and transformed my business."
+    },
+    {
+      "id": 3,
+      "farmer": "David Omondi",
+      "location": "Kisumu, Kenya",
+      "crop": "Fishing",
+      "revenueIncrease": "38%",
+      "loanAmount": "KES 200,000",
+      "repaymentRate": "95%",
+      "duration": "8 months",
+      "testimonial": "Access to timely credit allowed me to modernize my fishing equipment."
+    }
+  ],
+  "platformMetrics": {
+    "totalFarmers": "12,458",
+    "totalInvestors": "2,147",
+    "totalLoans": "KES 845M",
+    "avgReturn": "18.5%",
+    "defaultRate": "2.3%",
+    "recoveryRate": "87%"
+  },
+  "growthMetrics": {
+    "userGrowth": "156%",
+    "transactionGrowth": "234%",
+    "revenueGrowth": "189%",
+    "marketExpansion": "8 countries"
+  },
+  "impactMetrics": {
+    "jobsCreated": "15,000+",
+    "farmsSupported": "8,500+",
+    "communitiesReached": "125+",
+    "incomeIncrease": "42% avg."
+  }
+}
