@@ -12,17 +12,18 @@ import InputSellerDashboard from './pages/seller/Dashboard'
 import ExpertDashboard from './pages/ExpertDashboard'
 import FinancialDashboard from './pages/FinancialDashboard'
 
-// Test backend connection
+// Test backend connection - FIXED: Now connects to deployed backend
 const testBackendConnection = async () => {
   console.log('🔌 Testing backend connection...');
   try {
-    const response = await fetch('http://localhost:5000/api/health');
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com';
+    const response = await fetch(`${API_BASE_URL}/health`);
     const data = await response.json();
     console.log('✅ Backend is running:', data);
     return true;
   } catch (error) {
     console.error('❌ Backend connection failed:', error);
-    console.log('💡 Make sure your backend is running on http://localhost:5000');
+    console.log('💡 Make sure your backend is running on https://agripay-platform.onrender.com');
     return false;
   }
 };

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
 
 class FarmerApiService {
   constructor() {
@@ -175,7 +175,7 @@ class FarmerApiService {
   // ✅ ERROR HANDLER
   getErrorMessage(error, defaultMessage) {
     if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
-      return 'Cannot connect to server. Please ensure backend is running on http://localhost:5000';
+      return 'Cannot connect to server. Please check your internet connection and try again.';
     }
     if (error.response?.data?.message) {
       return error.response.data.message;

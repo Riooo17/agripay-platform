@@ -1,5 +1,5 @@
 ﻿// src/services/api.js
-const API_BASE_URL = window.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
 
 // Enhanced error handler
 const handleResponse = async (response) => {
@@ -825,7 +825,7 @@ export const farmerAPI = {
 export const checkAPIHealth = async (retries = 3) => {
   for (let i = 0; i < retries; i++) {
     try {
-      const response = await fetch(`${API_BASE_URL}/health`);
+      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
       return await handleResponse(response);
     } catch (error) {
       if (i === retries - 1) throw error;
@@ -855,11 +855,6 @@ export const apiMonitor = {
     }
   }
 };
-
-// Set API URL from window variable (for production)
-if (typeof window !== 'undefined') {
-  window.REACT_APP_API_BASE_URL = window.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
-}
 
 export default {
   auth: authAPI,

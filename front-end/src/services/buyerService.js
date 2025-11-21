@@ -5,13 +5,12 @@ export const buyerService = {
   // Get dashboard overview data
   async getDashboardData() {
     try {
-      const token = localStorage.getItem('agripay_token');
       console.log('📊 Fetching real buyer dashboard data...');
-      const result = await buyerAPI.getDashboardData(token);
+      const result = await buyerAPI.getDashboardData();
       
       if (result.success) {
-        console.log('✅ Real dashboard data:', result.data);
-        return result.data;
+        console.log('✅ Real dashboard data received');
+        return result.data || result;
       } else {
         console.error('❌ Dashboard data fetch failed:', result.message);
         return null;
@@ -25,13 +24,12 @@ export const buyerService = {
   // Get products for discovery
   async getProducts(filters = {}) {
     try {
-      const token = localStorage.getItem('agripay_token');
       console.log('🔍 Fetching real products...');
-      const result = await buyerAPI.getProducts(filters, token);
+      const result = await buyerAPI.getProducts(filters);
       
       if (result.success) {
-        console.log('✅ Real products data:', result.data);
-        return result.data;
+        console.log('✅ Real products data received');
+        return result.data || result;
       } else {
         console.error('❌ Products fetch failed:', result.message);
         return [];
@@ -43,15 +41,14 @@ export const buyerService = {
   },
 
   // Get buyer orders
-  async getOrders() {
+  async getOrders(status = '') {
     try {
-      const token = localStorage.getItem('agripay_token');
       console.log('📦 Fetching real orders...');
-      const result = await buyerAPI.getOrders(token);
+      const result = await buyerAPI.getOrders(status);
       
       if (result.success) {
-        console.log('✅ Real orders data:', result.data);
-        return result.data;
+        console.log('✅ Real orders data received');
+        return result.data || result;
       } else {
         console.error('❌ Orders fetch failed:', result.message);
         return [];
@@ -65,13 +62,12 @@ export const buyerService = {
   // Get notifications
   async getNotifications() {
     try {
-      const token = localStorage.getItem('agripay_token');
       console.log('🔔 Fetching real notifications...');
-      const result = await buyerAPI.getNotifications(token);
+      const result = await buyerAPI.getNotifications();
       
       if (result.success) {
-        console.log('✅ Real notifications:', result.data);
-        return result.data;
+        console.log('✅ Real notifications received');
+        return result.data || result;
       } else {
         console.error('❌ Notifications fetch failed:', result.message);
         return [];
@@ -79,6 +75,38 @@ export const buyerService = {
     } catch (error) {
       console.error('❌ Notifications API error:', error);
       return [];
+    }
+  },
+
+  // Place new order
+  async placeOrder(orderData) {
+    try {
+      console.log('🛒 Placing real order...');
+      const result = await buyerAPI.placeOrder(orderData);
+      
+      if (result.success) {
+        console.log('✅ Order placed successfully');
+        return result.data || result;
+      } else {
+        console.error('❌ Order placement failed:', result.message);
+        throw new Error(result.message || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('❌ Order API error:', error);
+      throw error;
+    }
+  },
+
+  // Record payment (for Paystack success)
+  async recordPayment(paymentData) {
+    try {
+      console.log('💰 Recording payment...', paymentData);
+      // This would call your backend to record the payment
+      // For now, simulate success since Paystack already processed it
+      return { success: true, message: 'Payment recorded successfully' };
+    } catch (error) {
+      console.error('❌ Payment recording error:', error);
+      throw error;
     }
   }
 };

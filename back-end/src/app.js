@@ -7,9 +7,14 @@ const mpesaService = require('./services/mpesaService');
 
 const app = express();
 
-// Middleware - FIXED CORS
+// Middleware - FIXED CORS FOR PRODUCTION FRONTEND
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'],
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:5173',
+    'https://agripayafrica.netlify.app',  // YOUR DEPLOYED FRONTEND
+    'https://agripay-platform.onrender.com'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -30,12 +35,12 @@ const connectDB = async () => {
   try {
     if (process.env.MONGODB_URI) {
       await mongoose.connect(process.env.MONGODB_URI);
-      console.log('? MongoDB Connected');
+      console.log('✅ MongoDB Connected');
     } else {
-      console.log('?? MONGODB_URI not set');
+      console.log('❌ MONGODB_URI not set');
     }
   } catch (error) {
-    console.log('? MongoDB connection failed:', error.message);
+    console.log('❌ MongoDB connection failed:', error.message);
   }
 };
 
@@ -57,7 +62,7 @@ require('./models/Loan');
 require('./models/InsurancePolicy');
 require('./models/Payment');
 require('./models/Client');
-console.log('? All models registered successfully');
+console.log('✅ All models registered successfully');
 
 // =============================================
 // ✅ MAIN API ROUTES FIRST (FIXED ORDER!)
@@ -116,7 +121,7 @@ app.post('/api/mpesa/stk-push', async (req, res) => {
 // M-Pesa callback handler
 app.post('/api/mpesa/callback', (req, res) => {
   try {
-    console.log('?? M-Pesa Callback Received:', JSON.stringify(req.body, null, 2));
+    console.log('📞 M-Pesa Callback Received:', JSON.stringify(req.body, null, 2));
     
     const callbackData = req.body;
     
@@ -124,10 +129,10 @@ app.post('/api/mpesa/callback', (req, res) => {
       const stkCallback = callbackData.Body.stkCallback;
       const resultCode = stkCallback.ResultCode;
       
-      console.log(`?? Payment Result: Code ${resultCode} - ${stkCallback.ResultDesc}`);
+      console.log(`💰 Payment Result: Code ${resultCode} - ${stkCallback.ResultDesc}`);
       
       if (resultCode === 0) {
-        console.log('? Payment successful!');
+        console.log('✅ Payment successful!');
       }
     }
     
@@ -260,7 +265,7 @@ app.use('*', (req, res) => {
 // Error handler
 // =============================================
 app.use((err, req, res, next) => {
-  console.error('?? Error:', err.message);
+  console.error('❌ Error:', err.message);
   
   res.status(500).json({
     success: false,

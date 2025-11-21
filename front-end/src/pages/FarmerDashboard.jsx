@@ -266,7 +266,8 @@ const FarmerDashboard = () => {
         let backendData = {};
         
         try {
-          const response = await fetch('http://localhost:5000/api/farmer/dashboard', {
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
+          const response = await fetch(`${API_BASE_URL}/farmer/dashboard`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -275,10 +276,10 @@ const FarmerDashboard = () => {
           
           if (response.ok) {
             backendData = await response.json();
-            console.log('✅ Backend data loaded:', backendData);
+            console.log('✅ Backend data loaded from deployed backend:', backendData);
           }
         } catch (error) {
-          console.log('⚠️ Using mock data - backend not available');
+          console.log('⚠️ Using mock data - backend not available:', error.message);
         }
 
         // Combine backend data with mock data

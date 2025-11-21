@@ -1,5 +1,5 @@
 // src/services/financialApi.js
-const API_BASE_URL = window.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
 
 // Enhanced error handler
 const handleResponse = async (response) => {
@@ -31,7 +31,7 @@ const getToken = () => {
 // Financial Institution API
 export const financialAPI = {
   // Dashboard Data
-  getDashboard: async () => {
+  getDashboardStats: async () => {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/financial/dashboard`, {
       headers: getHeaders(token)
@@ -65,28 +65,31 @@ export const financialAPI = {
     return handleResponse(response);
   },
 
-  approveLoan: async (applicationId) => {
+  approveLoan: async (applicationId, approvalData = {}) => {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/financial/loan-applications/${applicationId}/approve`, {
-      method: 'PUT',
-      headers: getHeaders(token)
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(approvalData)
     });
     return handleResponse(response);
   },
 
-  rejectLoan: async (applicationId) => {
+  rejectLoan: async (applicationId, rejectionData = {}) => {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/financial/loan-applications/${applicationId}/reject`, {
-      method: 'PUT',
-      headers: getHeaders(token)
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(rejectionData)
     });
     return handleResponse(response);
   },
 
   // Clients Management
-  getActiveClients: async () => {
+  getClients: async (params = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients?status=active`, {
+    const queryParams = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE_URL}/financial/clients?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -118,10 +121,21 @@ export const financialAPI = {
     return handleResponse(response);
   },
 
-  updateClientPayment: async (clientId, paymentData) => {
+  updateClient: async (clientId, clientData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients/${clientId}/payment`, {
+    const response = await fetch(`${API_BASE_URL}/financial/clients/${clientId}`, {
       method: 'PUT',
+      headers: getHeaders(token),
+      body: JSON.stringify(clientData)
+    });
+    return handleResponse(response);
+  },
+
+  // Record payment (for Paystack success)
+  recordPayment: async (paymentData) => {
+    const token = getToken();
+    const response = await fetch(`${API_BASE_URL}/financial/payments/record`, {
+      method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(paymentData)
     });
@@ -146,20 +160,22 @@ export const financialAPI = {
     return handleResponse(response);
   },
 
-  approveInsurance: async (policyId) => {
+  approveInsurance: async (policyId, approvalData = {}) => {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/financial/insurance-policies/${policyId}/approve`, {
-      method: 'PUT',
-      headers: getHeaders(token)
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(approvalData)
     });
     return handleResponse(response);
   },
 
-  rejectInsurance: async (policyId) => {
+  rejectInsurance: async (policyId, rejectionData = {}) => {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/financial/insurance-policies/${policyId}/reject`, {
-      method: 'PUT',
-      headers: getHeaders(token)
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(rejectionData)
     });
     return handleResponse(response);
   },
@@ -177,25 +193,6 @@ export const financialAPI = {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
     const response = await fetch(`${API_BASE_URL}/financial/payments/history?${queryParams}`, {
-      headers: getHeaders(token)
-    });
-    return handleResponse(response);
-  },
-
-  // Paystack Integration
-  initiatePaystackPayment: async (paymentData) => {
-    const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/payments/paystack/initiate`, {
-      method: 'POST',
-      headers: getHeaders(token),
-      body: JSON.stringify(paymentData)
-    });
-    return handleResponse(response);
-  },
-
-  verifyPaystackPayment: async (reference) => {
-    const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/payments/paystack/verify/${reference}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -225,7 +222,7 @@ export const financialAPI = {
 export const checkAPIHealth = async (retries = 3) => {
   for (let i = 0; i < retries; i++) {
     try {
-      const response = await fetch(`${API_BASE_URL}/health`);
+      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
       return await handleResponse(response);
     } catch (error) {
       if (i === retries - 1) throw error;
@@ -255,11 +252,6 @@ export const apiMonitor = {
     }
   }
 };
-
-// Set API URL from window variable (for production)
-if (typeof window !== 'undefined') {
-  window.REACT_APP_API_BASE_URL = window.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
-}
 
 export default {
   financial: financialAPI,
