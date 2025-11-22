@@ -30,27 +30,33 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB Connection with debugging
+// MongoDB Connection with specific options
 const connectDB = async () => {
   try {
     if (process.env.MONGODB_URI) {
       console.log('🔄 Attempting MongoDB connection...');
-      console.log('📝 Connection string:', process.env.MONGODB_URI.replace(/mongodb\+srv:\/\/([^:]+):([^@]+)@/, 'mongodb+srv://USER:PASSWORD@'));
       
       await mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 45000,
+        maxPoolSize: 10,
+        retryWrites: true,
+        w: 'majority'
       });
-      console.log('✅ MongoDB Connected');
+      
+      console.log('✅ MongoDB Connected successfully');
       console.log('📊 Database:', mongoose.connection.db.databaseName);
+      console.log('🔗 Connection state:', mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected');
     } else {
       console.log('❌ MONGODB_URI not set');
     }
   } catch (error) {
     console.log('❌ MongoDB connection failed:', error.message);
-    console.log('🔍 Error name:', error.name);
-    console.log('🔍 Error code:', error.code);
-    console.log('🔍 Full error details:', JSON.stringify(error, null, 2));
+    console.log('🔍 Error details:', {
+      name: error.name,
+      code: error.code,
+      codeName: error.codeName
+    });
   }
 };
 
