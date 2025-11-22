@@ -16,7 +16,7 @@ import FinancialDashboard from './pages/FinancialDashboard'
 const testBackendConnection = async () => {
   console.log('🔌 Testing backend connection...');
   try {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com';
+ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
     const response = await fetch(`${API_BASE_URL}/health`);
     const data = await response.json();
     console.log('✅ Backend is running:', data);
