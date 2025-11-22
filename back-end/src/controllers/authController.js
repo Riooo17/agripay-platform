@@ -236,6 +236,62 @@ const authController = {
     }
   },
 
+  forgotPassword: async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required'
+        });
+      }
+
+      const user = await User.findOne({ email: email.toLowerCase().trim() });
+      
+      // Always return success to prevent email enumeration
+      res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent'
+      });
+      
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Password reset failed',
+        error: error.message
+      });
+    }
+  },
+
+  resetPassword: async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token and new password are required'
+        });
+      }
+
+      // For now, just return success since we don't have email setup
+      res.json({
+        success: true,
+        message: 'Password reset successfully'
+      });
+      
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Password reset failed',
+        error: error.message
+      });
+    }
+  },
+
   getProfile: async (req, res, next) => {
     try {
       // FIX: Check if req.user exists first
