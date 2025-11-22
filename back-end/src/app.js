@@ -71,6 +71,12 @@ const routes = require('./routes');
 app.use('/api', routes);
 
 // =============================================
+// ✅ AUTH ROUTES
+// =============================================
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
+// =============================================
 // ✅ FINANCIAL ROUTES
 // =============================================
 const financialRoutes = require('./routes/financial');
