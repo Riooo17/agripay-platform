@@ -1,98 +1,68 @@
 const express = require('express');
-const router = express.Router();
 const authController = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const { body } = require('express-validator');
+const { validationResult } = require('express-validator'); // ADD THIS LINE
 const rateLimit = require('express-rate-limit');
 
-// Rate limiting for login attempts
-const loginLimiter = rateLimit({
+const router = express.Router();
+
+// Rate limiting for auth routes
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login attempts
+  max: 5, // limit each IP to 5 requests per windowMs
   message: {
     success: false,
-    message: 'Too many login attempts, please try again after 15 minutes'
+    message: 'Too many authentication attempts, please try again later'
   }
 });
 
-// Input validation
-const loginValidation = [
-  body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 6 })
-];
-
+// Validation rules
 const registerValidation = [
-  body('name').notEmpty().trim(),
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
-  body('role').isIn(['farmer', 'buyer', 'input-seller', 'logistics', 'financial'])
+  body('firstName').notEmpty().trim(),
+  body('lastName').notEmpty().trim(),
+  body('role').isIn(['farmer', 'buyer', 'input-seller', 'logistics', 'expert'])
 ];
 
-// 🚀 FIXED: Login with validation and rate limiting
-router.post('/login', loginLimiter, loginValidation, async (req, res) => {
-  console.log('🔐 LOGIN ATTEMPT:', { 
-    email: req.body.email, 
-    role: req.body.role || 'farmer'
-  });
-  
-  try {
-    // Check validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
+const loginValidation = [
+  body('email').isEmail().normalizeEmail(),
+  body('password').notEmpty()
+];
 
-    await authController.login(req, res);
-    
-  } catch (error) {
-    console.error('💥 LOGIN ERROR:', error);
-    
-    if (!res.headersSent) {
-      res.status(500).json({ 
-        success: false,
-        message: 'Login failed due to server error' 
-      });
-    }
+// Routes
+router.post('/register', authLimiter, registerValidation, (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
+    });
   }
+  authController.register(req, res, next);
 });
 
-// Fixed register route with validation
-router.post('/register', registerValidation, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-
-    await authController.register(req, res);
-    
-  } catch (error) {
-    console.error('💥 REGISTER ERROR:', error);
-    
-    if (!res.headersSent) {
-      res.status(500).json({ 
-        success: false,
-        message: 'Registration failed due to server error' 
-      });
-    }
+router.post('/login', authLimiter, loginValidation, (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
+    });
   }
+  authController.login(req, res, next);
 });
 
-// Additional routes
-router.post('/refresh-token', authController.refreshToken);
 router.post('/logout', authenticate, authController.logout);
 router.get('/profile', authenticate, authController.getProfile);
-
-// Password reset routes
+router.put('/profile', authenticate, authController.updateProfile);
+router.post('/refresh-token', authController.refreshToken);
+router.post('/change-password', authenticate, authController.changePassword);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
+router.put('/verify-farmer/:userId', authenticate, authController.verifyFarmer);
 
 module.exports = router;
