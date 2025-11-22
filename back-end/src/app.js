@@ -30,17 +30,27 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB Connection
+// MongoDB Connection with debugging
 const connectDB = async () => {
   try {
     if (process.env.MONGODB_URI) {
-      await mongoose.connect(process.env.MONGODB_URI);
+      console.log('🔄 Attempting MongoDB connection...');
+      console.log('📝 Connection string:', process.env.MONGODB_URI.replace(/mongodb\+srv:\/\/([^:]+):([^@]+)@/, 'mongodb+srv://USER:PASSWORD@'));
+      
+      await mongoose.connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      });
       console.log('✅ MongoDB Connected');
+      console.log('📊 Database:', mongoose.connection.db.databaseName);
     } else {
       console.log('❌ MONGODB_URI not set');
     }
   } catch (error) {
     console.log('❌ MongoDB connection failed:', error.message);
+    console.log('🔍 Error name:', error.name);
+    console.log('🔍 Error code:', error.code);
+    console.log('🔍 Full error details:', JSON.stringify(error, null, 2));
   }
 };
 
@@ -247,11 +257,15 @@ app.post('/api/mpesa/test-payment', async (req, res) => {
 // HEALTH CHECK ENDPOINT
 // =============================================
 app.get('/api/health', (req, res) => {
+  // Check MongoDB connection status
+  const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
+  
   res.json({
     success: true,
     message: 'AgriPay API Server is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
+    database: dbStatus,
     version: '1.0.0'
   });
 });
