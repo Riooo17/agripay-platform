@@ -17,7 +17,9 @@ const testBackendConnection = async () => {
   console.log('🔌 Testing backend connection...');
   try {
  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
-    const response = await fetch(`${API_BASE_URL}/health`);
+   console.log('🔗 Testing backend URL:', `${API_BASE_URL}/health`);
+const response = await fetch(`${API_BASE_URL}/health`);
+console.log('🔗 Response status:', response.status);
     const data = await response.json();
     console.log('✅ Backend is running:', data);
     return true;
