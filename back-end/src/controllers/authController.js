@@ -220,6 +220,22 @@ const authController = {
     }
   },
 
+  logout: async (req, res) => {
+    try {
+      // Clear token from client side
+      res.json({
+        success: true,
+        message: 'Logged out successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Logout failed',
+        error: error.message
+      });
+    }
+  },
+
   getProfile: async (req, res, next) => {
     try {
       // FIX: Check if req.user exists first
