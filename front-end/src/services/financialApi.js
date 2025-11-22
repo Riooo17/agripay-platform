@@ -222,7 +222,7 @@ export const financialAPI = {
 export const checkAPIHealth = async (retries = 3) => {
   for (let i = 0; i < retries; i++) {
     try {
-      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+      const response = await fetch(`${API_BASE_URL}/health`);
       return await handleResponse(response);
     } catch (error) {
       if (i === retries - 1) throw error;
