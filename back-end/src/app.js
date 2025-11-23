@@ -7,6 +7,9 @@ const mpesaService = require('./services/mpesaService');
 
 const app = express();
 
+// Trust proxy for Render.com - ADD THIS LINE
+app.set('trust proxy', true);
+
 // Middleware - FIXED CORS FOR PRODUCTION FRONTEND
 app.use(cors({
   origin: [
@@ -41,7 +44,9 @@ const connectDB = async () => {
         socketTimeoutMS: 45000,
         maxPoolSize: 10,
         retryWrites: true,
-        w: 'majority'
+        w: 'majority',
+        bufferCommands: false, // ADD THIS
+        bufferMaxEntries: 0 // ADD THIS
       });
       
       console.log('✅ MongoDB Connected successfully');
