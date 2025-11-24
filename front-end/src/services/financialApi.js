@@ -33,7 +33,7 @@ export const financialAPI = {
   // Dashboard Data
   getDashboardStats: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/dashboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/dashboard`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -41,7 +41,7 @@ export const financialAPI = {
 
   getAnalytics: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/analytics`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/analytics`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -59,7 +59,7 @@ export const financialAPI = {
 
   getPendingLoans: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/loan-applications?status=pending`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications?status=pending`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -67,7 +67,7 @@ export const financialAPI = {
 
   approveLoan: async (applicationId, approvalData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/loan-applications/${applicationId}/approve`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications/${applicationId}/approve`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(approvalData)
@@ -77,7 +77,7 @@ export const financialAPI = {
 
   rejectLoan: async (applicationId, rejectionData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/loan-applications/${applicationId}/reject`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications/${applicationId}/reject`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(rejectionData)
@@ -89,7 +89,7 @@ export const financialAPI = {
   getClients: async (params = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_BASE_URL}/financial/clients?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -97,7 +97,7 @@ export const financialAPI = {
 
   getClientPortfolio: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients/portfolio`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients/portfolio`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -105,7 +105,7 @@ export const financialAPI = {
 
   getClient: async (clientId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients/${clientId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -113,7 +113,7 @@ export const financialAPI = {
 
   requestPayment: async (clientId, paymentData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients/${clientId}/request-payment`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}/request-payment`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(paymentData)
@@ -123,7 +123,7 @@ export const financialAPI = {
 
   updateClient: async (clientId, clientData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients/${clientId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(clientData)
@@ -134,7 +134,7 @@ export const financialAPI = {
   // Record payment (for Paystack success)
   recordPayment: async (paymentData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/payments/record`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/payments/record`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(paymentData)
@@ -154,7 +154,7 @@ export const financialAPI = {
 
   getPendingInsurance: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/insurance-policies?status=pending`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/insurance-policies?status=pending`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -162,7 +162,7 @@ export const financialAPI = {
 
   approveInsurance: async (policyId, approvalData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/insurance-policies/${policyId}/approve`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/insurance-policies/${policyId}/approve`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(approvalData)
@@ -172,7 +172,7 @@ export const financialAPI = {
 
   rejectInsurance: async (policyId, rejectionData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/insurance-policies/${policyId}/reject`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/insurance-policies/${policyId}/reject`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(rejectionData)
@@ -183,7 +183,7 @@ export const financialAPI = {
   // Payment Collections
   getPaymentDueSoon: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/payments/due-soon`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/payments/due-soon`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -192,7 +192,7 @@ export const financialAPI = {
   getPaymentHistory: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/financial/payments/history?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/payments/history?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -201,7 +201,7 @@ export const financialAPI = {
   // Reports & Analytics
   getReports: async (reportType, period = 'monthly') => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/reports/${reportType}?period=${period}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/reports/${reportType}?period=${period}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -209,7 +209,7 @@ export const financialAPI = {
 
   generatePortfolioReport: async (reportData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/reports/portfolio`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/reports/portfolio`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(reportData)

@@ -1,4 +1,4 @@
-﻿// src/services/api.js
+// src/services/api.js
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
 
 // Enhanced error handler
@@ -23,7 +23,7 @@ const getHeaders = (token) => {
   return headers;
 };
 
-// ✅ FIXED: Get token from correct localStorage key
+// ? FIXED: Get token from correct localStorage key
 const getToken = () => {
   return localStorage.getItem('agripay_token');
 };
@@ -33,7 +33,7 @@ export const financialAPI = {
   // Dashboard Data - FIXED: Matches your /dashboard route
   getDashboardStats: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/dashboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/dashboard`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -43,7 +43,7 @@ export const financialAPI = {
   getLoanApplications: async (status = 'pending') => {
     const token = getToken();
     const queryParams = new URLSearchParams({ status }).toString();
-    const response = await fetch(`${API_BASE_URL}/financial/loan-applications?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -51,7 +51,7 @@ export const financialAPI = {
 
   getLoanApplication: async (applicationId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/loan-applications/${applicationId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications/${applicationId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -59,7 +59,7 @@ export const financialAPI = {
 
   approveLoan: async (applicationId, approvalData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/loan-applications/${applicationId}/approve`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications/${applicationId}/approve`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(approvalData)
@@ -69,7 +69,7 @@ export const financialAPI = {
 
   rejectLoan: async (applicationId, rejectionData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/loan-applications/${applicationId}/reject`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications/${applicationId}/reject`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(rejectionData)
@@ -81,7 +81,7 @@ export const financialAPI = {
   getClients: async (params = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_BASE_URL}/financial/clients?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -89,7 +89,7 @@ export const financialAPI = {
 
   getClient: async (clientId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients/${clientId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -97,7 +97,7 @@ export const financialAPI = {
 
   updateClient: async (clientId, clientData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients/${clientId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(clientData)
@@ -108,7 +108,7 @@ export const financialAPI = {
   // Payment Management - FIXED: Matches your routes
   requestPayment: async (clientId, paymentData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/clients/${clientId}/request-payment`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}/request-payment`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(paymentData)
@@ -119,7 +119,7 @@ export const financialAPI = {
   getPaymentHistory: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/financial/payments?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/payments?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -139,7 +139,7 @@ export const financialAPI = {
 
   approveInsurance: async (policyId, approvalData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/insurance-policies/${policyId}/approve`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/insurance-policies/${policyId}/approve`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(approvalData)
@@ -149,7 +149,7 @@ export const financialAPI = {
 
   rejectInsurance: async (policyId, rejectionData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/insurance-policies/${policyId}/reject`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/insurance-policies/${policyId}/reject`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(rejectionData)
@@ -160,7 +160,7 @@ export const financialAPI = {
   // Portfolio Analytics - FIXED: Matches your routes
   getPortfolioAnalytics: async (period = 'monthly') => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/analytics/portfolio?period=${period}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/analytics/portfolio?period=${period}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -168,7 +168,7 @@ export const financialAPI = {
 
   getRiskAssessment: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/analytics/risk-assessment`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/analytics/risk-assessment`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -177,7 +177,7 @@ export const financialAPI = {
   // Reports - FIXED: Matches your routes
   generateReport: async (reportType, parameters = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/reports/${reportType}`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/reports/${reportType}`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(parameters)
@@ -188,7 +188,7 @@ export const financialAPI = {
   // Real-time Updates - FIXED: Matches your routes
   subscribeToUpdates: async (channels = []) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/financial/updates/subscribe`, {
+    const response = await fetch(`${API_BASE_URL}/api/financial/updates/subscribe`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify({ channels })
@@ -202,7 +202,7 @@ export const sellerAPI = {
   // Dashboard Data - FIXED: Matches your /dashboard route
   getDashboardData: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/dashboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/dashboard`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -212,7 +212,7 @@ export const sellerAPI = {
   getProducts: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/seller/products?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/products?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -220,7 +220,7 @@ export const sellerAPI = {
 
   getProduct: async (productId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/products/${productId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/products/${productId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -228,7 +228,7 @@ export const sellerAPI = {
 
   createProduct: async (productData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/products`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/products`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(productData)
@@ -238,7 +238,7 @@ export const sellerAPI = {
 
   updateProduct: async (productId, productData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/products/${productId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/products/${productId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(productData)
@@ -248,7 +248,7 @@ export const sellerAPI = {
 
   deleteProduct: async (productId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/products/${productId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/products/${productId}`, {
       method: 'DELETE',
       headers: getHeaders(token)
     });
@@ -259,7 +259,7 @@ export const sellerAPI = {
   getOrders: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/seller/orders?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/orders?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -267,7 +267,7 @@ export const sellerAPI = {
 
   updateOrderStatus: async (orderId, status) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/orders/${orderId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/orders/${orderId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify({ status })
@@ -278,7 +278,7 @@ export const sellerAPI = {
   // Analytics - FIXED: Matches your /analytics route
   getSalesAnalytics: async (timeRange = '7d') => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/analytics?range=${timeRange}`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/analytics?range=${timeRange}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -286,7 +286,7 @@ export const sellerAPI = {
 
   getInventoryStats: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/analytics/inventory`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/analytics/inventory`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -295,7 +295,7 @@ export const sellerAPI = {
   // Customer Management - FIXED: Matches your /customers route
   getCustomers: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/customers`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/customers`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -304,7 +304,7 @@ export const sellerAPI = {
   // Quick Sales & Payments - Using orders endpoint
   processQuickSale: async (saleData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/orders`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/orders`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(saleData)
@@ -324,7 +324,7 @@ export const sellerAPI = {
 
   updateDeliveryStatus: async (deliveryId, status) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/orders/${deliveryId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/orders/${deliveryId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify({ deliveryStatus: status })
@@ -334,7 +334,7 @@ export const sellerAPI = {
 
   assignDriver: async (deliveryId, driverData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/seller/orders/${deliveryId}/assign-driver`, {
+    const response = await fetch(`${API_BASE_URL}/api/seller/orders/${deliveryId}/assign-driver`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(driverData)
@@ -365,7 +365,7 @@ export const authAPI = {
 
   getProfile: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -373,7 +373,7 @@ export const authAPI = {
 
   logout: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: 'POST',
       headers: getHeaders(token)
     });
@@ -385,7 +385,7 @@ export const authAPI = {
 export const paystackAPI = {
   initializePayment: async (paymentData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/paystack/initialize`, {
+    const response = await fetch(`${API_BASE_URL}/api/paystack/initialize`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(paymentData)
@@ -395,7 +395,7 @@ export const paystackAPI = {
 
   verifyPayment: async (reference) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/paystack/verify/${reference}`, {
+    const response = await fetch(`${API_BASE_URL}/api/paystack/verify/${reference}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -404,7 +404,7 @@ export const paystackAPI = {
   getPaymentHistory: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/paystack/payments?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/paystack/payments?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -416,7 +416,7 @@ export const expertAPI = {
   // Dashboard
   getDashboard: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/expert/dashboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/dashboard`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -424,7 +424,7 @@ export const expertAPI = {
 
   getAnalytics: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/expert/analytics`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/analytics`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -434,7 +434,7 @@ export const expertAPI = {
   getConsultations: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/expert/consultations?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/consultations?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -442,7 +442,7 @@ export const expertAPI = {
 
   updateConsultation: async (consultationId, updates) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/expert/consultations/${consultationId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/consultations/${consultationId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(updates)
@@ -452,7 +452,7 @@ export const expertAPI = {
 
   provideAdvice: async (consultationId, adviceData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/expert/advice`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/advice`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify({ consultationId, ...adviceData })
@@ -463,7 +463,7 @@ export const expertAPI = {
   // Availability
   setAvailability: async (availability) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/expert/availability`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/availability`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(availability)
@@ -475,7 +475,7 @@ export const expertAPI = {
   getClients: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/expert/clients?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/clients?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -485,7 +485,7 @@ export const expertAPI = {
   getKnowledgeContent: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/expert/knowledge?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/knowledge?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -493,7 +493,7 @@ export const expertAPI = {
 
   createKnowledgeContent: async (contentData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/expert/knowledge`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/knowledge`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(contentData)
@@ -503,7 +503,7 @@ export const expertAPI = {
 
   updateKnowledgeContent: async (contentId, updates) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/expert/knowledge/${contentId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/expert/knowledge/${contentId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(updates)
@@ -516,7 +516,7 @@ export const expertAPI = {
 export const buyerAPI = {
   getDashboardData: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/buyer/dashboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/buyer/dashboard`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -525,7 +525,7 @@ export const buyerAPI = {
   getProducts: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/buyer/products?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/buyer/products?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -542,7 +542,7 @@ export const buyerAPI = {
 
   getNotifications: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/buyer/notifications`, {
+    const response = await fetch(`${API_BASE_URL}/api/buyer/notifications`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -550,7 +550,7 @@ export const buyerAPI = {
 
   placeOrder: async (orderData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/buyer/orders`, {
+    const response = await fetch(`${API_BASE_URL}/api/buyer/orders`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(orderData)
@@ -564,7 +564,7 @@ export const logisticsAPI = {
   // Dashboard Data
   getDashboard: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/dashboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/dashboard`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -582,7 +582,7 @@ export const logisticsAPI = {
 
   getShipment: async (shipmentId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/shipments/${shipmentId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/shipments/${shipmentId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -590,7 +590,7 @@ export const logisticsAPI = {
 
   updateShipment: async (shipmentId, data) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/shipments/${shipmentId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/shipments/${shipmentId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(data)
@@ -600,7 +600,7 @@ export const logisticsAPI = {
 
   createShipment: async (shipmentData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/shipments`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/shipments`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(shipmentData)
@@ -620,7 +620,7 @@ export const logisticsAPI = {
 
   getVehicle: async (vehicleId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/vehicles/${vehicleId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/vehicles/${vehicleId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -628,7 +628,7 @@ export const logisticsAPI = {
 
   updateVehicle: async (vehicleId, data) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/vehicles/${vehicleId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/vehicles/${vehicleId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(data)
@@ -638,7 +638,7 @@ export const logisticsAPI = {
 
   createVehicle: async (vehicleData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/vehicles`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/vehicles`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(vehicleData)
@@ -649,7 +649,7 @@ export const logisticsAPI = {
   // Route Optimization
   optimizeRoutes: async (routeData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/routes/optimize`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/routes/optimize`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(routeData)
@@ -659,7 +659,7 @@ export const logisticsAPI = {
 
   getOptimizedRoutes: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/routes/optimized`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/routes/optimized`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -668,7 +668,7 @@ export const logisticsAPI = {
   // Cold Chain Management
   getColdChainUnits: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/cold-chain/units`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/cold-chain/units`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -676,7 +676,7 @@ export const logisticsAPI = {
 
   activateColdChain: async (unitData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/cold-chain/activate`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/cold-chain/activate`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(unitData)
@@ -686,7 +686,7 @@ export const logisticsAPI = {
 
   updateColdChainUnit: async (unitId, data) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/cold-chain/units/${unitId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/cold-chain/units/${unitId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(data)
@@ -697,7 +697,7 @@ export const logisticsAPI = {
   // AI Predictions & Analytics
   getPredictions: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/ai/predictions`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/ai/predictions`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -705,7 +705,7 @@ export const logisticsAPI = {
 
   generatePrediction: async (predictionData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/ai/generate-prediction`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/ai/generate-prediction`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(predictionData)
@@ -716,7 +716,7 @@ export const logisticsAPI = {
   // Rural Logistics
   optimizeRuralRoutes: async (ruralData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/rural/optimize`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/rural/optimize`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(ruralData)
@@ -727,7 +727,7 @@ export const logisticsAPI = {
   // Crisis Management
   activateCrisisProtocol: async (crisisData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/crisis/activate`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/crisis/activate`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(crisisData)
@@ -738,7 +738,7 @@ export const logisticsAPI = {
   // Real-time Tracking
   getLiveTracking: async (shipmentId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/tracking/${shipmentId}/live`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/tracking/${shipmentId}/live`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -746,7 +746,7 @@ export const logisticsAPI = {
 
   updateLocation: async (vehicleId, locationData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/vehicles/${vehicleId}/location`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/vehicles/${vehicleId}/location`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(locationData)
@@ -758,7 +758,7 @@ export const logisticsAPI = {
   getPaymentHistory: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/logistics/payments?${queryParams}`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/payments?${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -766,7 +766,7 @@ export const logisticsAPI = {
 
   updatePaymentStatus: async (paymentId, status) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/payments/${paymentId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/payments/${paymentId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify({ status })
@@ -777,7 +777,7 @@ export const logisticsAPI = {
   // Reports & Analytics
   getReports: async (reportType, period = 'weekly') => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/logistics/reports/${reportType}?period=${period}`, {
+    const response = await fetch(`${API_BASE_URL}/api/logistics/reports/${reportType}?period=${period}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -788,7 +788,7 @@ export const logisticsAPI = {
 export const farmerAPI = {
   getDashboardData: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/farmer/dashboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/farmer/dashboard`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -796,7 +796,7 @@ export const farmerAPI = {
 
   getProducts: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/farmer/products`, {
+    const response = await fetch(`${API_BASE_URL}/api/farmer/products`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -804,7 +804,7 @@ export const farmerAPI = {
 
   createProduct: async (productData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/farmer/products`, {
+    const response = await fetch(`${API_BASE_URL}/api/farmer/products`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(productData)
@@ -814,7 +814,7 @@ export const farmerAPI = {
 
   getOrders: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/farmer/orders`, {
+    const response = await fetch(`${API_BASE_URL}/api/farmer/orders`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -825,7 +825,7 @@ export const farmerAPI = {
 export const checkAPIHealth = async (retries = 3) => {
   for (let i = 0; i < retries; i++) {
     try {
-     const response = await fetch(`${API_BASE_URL}/health`);
+     const response = await fetch(`${API_BASE_URL}/api/health`);
       return await handleResponse(response);
     } catch (error) {
       if (i === retries - 1) throw error;
