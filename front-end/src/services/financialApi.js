@@ -1,12 +1,26 @@
 // src/services/financialApi.js
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
 
-// Enhanced error handler
+// Enhanced error handler with better error messages
 const handleResponse = async (response) => {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Network error occurred' }));
-    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    let errorMessage = 'Network error occurred';
+    
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+    } catch {
+      errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    }
+    
+    throw new Error(errorMessage);
   }
+  
+  // Handle 204 No Content responses
+  if (response.status === 204) {
+    return { success: true };
+  }
+  
   return response.json();
 };
 
@@ -28,12 +42,28 @@ const getToken = () => {
   return localStorage.getItem('agripay_token');
 };
 
+// Request interceptor for logging and retry logic
+const fetchWithRetry = async (url, options = {}, retries = 3) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (error) {
+      if (attempt === retries) {
+        throw error;
+      }
+      // Wait before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+};
+
 // Financial Institution API
 export const financialAPI = {
-  // Dashboard Data
+  // Dashboard Data - FIXED: Removed duplicate /api from URLs
   getDashboardStats: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/dashboard`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/dashboard`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -41,17 +71,17 @@ export const financialAPI = {
 
   getAnalytics: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/analytics`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/analytics`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
   },
 
-  // Loan Applications
+  // Loan Applications - FIXED: URL consistency
   getLoanApplications: async (status = '') => {
     const token = getToken();
-    const url = status ? `${API_BASE_URL}/financial/loan-applications?status=${status}` : `${API_BASE_URL}/financial/loan-applications`;
-    const response = await fetch(url, {
+    const queryParams = status ? `?status=${status}` : '';
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/loan-applications${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -59,7 +89,15 @@ export const financialAPI = {
 
   getPendingLoans: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications?status=pending`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/loan-applications?status=pending`, {
+      headers: getHeaders(token)
+    });
+    return handleResponse(response);
+  },
+
+  getLoanApplication: async (applicationId) => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/loan-applications/${applicationId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -67,7 +105,7 @@ export const financialAPI = {
 
   approveLoan: async (applicationId, approvalData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications/${applicationId}/approve`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/loan-applications/${applicationId}/approve`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(approvalData)
@@ -77,7 +115,7 @@ export const financialAPI = {
 
   rejectLoan: async (applicationId, rejectionData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/loan-applications/${applicationId}/reject`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/loan-applications/${applicationId}/reject`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(rejectionData)
@@ -85,11 +123,12 @@ export const financialAPI = {
     return handleResponse(response);
   },
 
-  // Clients Management
+  // Clients Management - FIXED: URL consistency
   getClients: async (params = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_BASE_URL}/api/financial/clients?${queryParams}`, {
+    const url = queryParams ? `${API_BASE_URL}/financial/clients?${queryParams}` : `${API_BASE_URL}/financial/clients`;
+    const response = await fetchWithRetry(url, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -97,7 +136,7 @@ export const financialAPI = {
 
   getClientPortfolio: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/clients/portfolio`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/clients/portfolio`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -105,7 +144,7 @@ export const financialAPI = {
 
   getClient: async (clientId) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/clients/${clientId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -113,7 +152,7 @@ export const financialAPI = {
 
   requestPayment: async (clientId, paymentData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}/request-payment`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/clients/${clientId}/request-payment`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(paymentData)
@@ -123,7 +162,7 @@ export const financialAPI = {
 
   updateClient: async (clientId, clientData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/clients/${clientId}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/clients/${clientId}`, {
       method: 'PUT',
       headers: getHeaders(token),
       body: JSON.stringify(clientData)
@@ -134,7 +173,7 @@ export const financialAPI = {
   // Record payment (for Paystack success)
   recordPayment: async (paymentData) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/payments/record`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/payments/record`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(paymentData)
@@ -142,11 +181,11 @@ export const financialAPI = {
     return handleResponse(response);
   },
 
-  // Insurance Management
+  // Insurance Management - FIXED: URL consistency
   getInsurancePolicies: async (status = '') => {
     const token = getToken();
-    const url = status ? `${API_BASE_URL}/financial/insurance-policies?status=${status}` : `${API_BASE_URL}/financial/insurance-policies`;
-    const response = await fetch(url, {
+    const queryParams = status ? `?status=${status}` : '';
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/insurance-policies${queryParams}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -154,7 +193,15 @@ export const financialAPI = {
 
   getPendingInsurance: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/insurance-policies?status=pending`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/insurance-policies?status=pending`, {
+      headers: getHeaders(token)
+    });
+    return handleResponse(response);
+  },
+
+  getInsurancePolicy: async (policyId) => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/insurance-policies/${policyId}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -162,7 +209,7 @@ export const financialAPI = {
 
   approveInsurance: async (policyId, approvalData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/insurance-policies/${policyId}/approve`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/insurance-policies/${policyId}/approve`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(approvalData)
@@ -172,7 +219,7 @@ export const financialAPI = {
 
   rejectInsurance: async (policyId, rejectionData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/insurance-policies/${policyId}/reject`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/insurance-policies/${policyId}/reject`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(rejectionData)
@@ -180,10 +227,10 @@ export const financialAPI = {
     return handleResponse(response);
   },
 
-  // Payment Collections
+  // Payment Collections - FIXED: URL consistency
   getPaymentDueSoon: async () => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/payments/due-soon`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/payments/due-soon`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -192,16 +239,35 @@ export const financialAPI = {
   getPaymentHistory: async (filters = {}) => {
     const token = getToken();
     const queryParams = new URLSearchParams(filters).toString();
-    const response = await fetch(`${API_BASE_URL}/api/financial/payments/history?${queryParams}`, {
+    const url = queryParams ? `${API_BASE_URL}/financial/payments/history?${queryParams}` : `${API_BASE_URL}/financial/payments/history`;
+    const response = await fetchWithRetry(url, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
   },
 
-  // Reports & Analytics
+  getPayment: async (paymentId) => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/payments/${paymentId}`, {
+      headers: getHeaders(token)
+    });
+    return handleResponse(response);
+  },
+
+  updatePaymentStatus: async (paymentId, status) => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/payments/${paymentId}`, {
+      method: 'PUT',
+      headers: getHeaders(token),
+      body: JSON.stringify({ status })
+    });
+    return handleResponse(response);
+  },
+
+  // Reports & Analytics - FIXED: URL consistency
   getReports: async (reportType, period = 'monthly') => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/reports/${reportType}?period=${period}`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/reports/${reportType}?period=${period}`, {
       headers: getHeaders(token)
     });
     return handleResponse(response);
@@ -209,10 +275,66 @@ export const financialAPI = {
 
   generatePortfolioReport: async (reportData = {}) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE_URL}/api/financial/reports/portfolio`, {
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/reports/portfolio`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(reportData)
+    });
+    return handleResponse(response);
+  },
+
+  generateRiskReport: async (riskData = {}) => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/reports/risk-assessment`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(riskData)
+    });
+    return handleResponse(response);
+  },
+
+  // Portfolio Analytics
+  getPortfolioAnalytics: async (period = 'monthly') => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/analytics/portfolio?period=${period}`, {
+      headers: getHeaders(token)
+    });
+    return handleResponse(response);
+  },
+
+  getRiskAssessment: async () => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/analytics/risk-assessment`, {
+      headers: getHeaders(token)
+    });
+    return handleResponse(response);
+  },
+
+  // Real-time Updates
+  subscribeToUpdates: async (channels = []) => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/updates/subscribe`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ channels })
+    });
+    return handleResponse(response);
+  },
+
+  // Notifications
+  getNotifications: async () => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/notifications`, {
+      headers: getHeaders(token)
+    });
+    return handleResponse(response);
+  },
+
+  markNotificationAsRead: async (notificationId) => {
+    const token = getToken();
+    const response = await fetchWithRetry(`${API_BASE_URL}/financial/notifications/${notificationId}/read`, {
+      method: 'PUT',
+      headers: getHeaders(token)
     });
     return handleResponse(response);
   }
@@ -253,8 +375,38 @@ export const apiMonitor = {
   }
 };
 
+// Utility function to clear auth data
+export const clearAuthData = () => {
+  localStorage.removeItem('agripay_token');
+  localStorage.removeItem('agripay_user');
+};
+
+// Financial-specific utility functions
+export const financialUtils = {
+  formatCurrency: (amount, currency = 'NGN') => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  },
+
+  calculateInterest: (principal, rate, time) => {
+    return principal * (rate / 100) * time;
+  },
+
+  formatDate: (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-NG', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+};
+
 export default {
   financial: financialAPI,
   health: checkAPIHealth,
-  monitor: apiMonitor
+  monitor: apiMonitor,
+  utils: financialUtils,
+  clearAuthData
 };
