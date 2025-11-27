@@ -60,13 +60,13 @@ const Navigation = () => {
             ) : (
               <>
                 <Link
-                  to="/auth/login"
+                  to="/auth"
                   className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
                 >
                   Sign In
                 </Link>
                 <Link
-                  to="/auth/role-selection"
+                  to="/auth"
                   className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
                 >
                   Get Started
@@ -110,10 +110,10 @@ const Navigation = () => {
                 </>
               ) : (
                 <>
-                  <Link to="/auth/login" className="text-gray-700 hover:text-green-600 block px-3 py-2 text-base font-medium">
+                  <Link to="/auth" className="text-gray-700 hover:text-green-600 block px-3 py-2 text-base font-medium">
                     Sign In
                   </Link>
-                  <Link to="/auth/role-selection" className="text-green-600 hover:text-green-700 block px-3 py-2 text-base font-medium">
+                  <Link to="/auth" className="text-green-600 hover:text-green-700 block px-3 py-2 text-base font-medium">
                     Get Started
                   </Link>
                 </>
