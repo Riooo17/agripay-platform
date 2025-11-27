@@ -1,6 +1,5 @@
 ﻿// src/services/api.js
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com:10000/api';
 // Enhanced error handler with better error messages
 const handleResponse = async (response) => {
   if (!response.ok) {
