@@ -12,7 +12,7 @@ const registerValidation = [
   body('password').isLength({ min: 6 }),
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim(),
-  body('role').isIn(['farmer', 'buyer', 'input-seller', 'logistics', 'expert'])
+  body('role').isIn(['farmer', 'buyer', 'input-seller', 'logistics', 'expert', 'financial'])
 ];
 
 const loginValidation = [
