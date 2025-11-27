@@ -1,4 +1,3 @@
-// routes/index.js - COMPLETE VERSION WITH REAL PAYSTACK
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
@@ -6,13 +5,13 @@ const axios = require('axios');
 console.log('🔍 DEBUGGING ROUTE IMPORTS...');
 
 // Import route files
-let authRoutes, paymentRoutes, loanRoutes, reportsRoutes, farmerRoutes;
+let authRoutes, loanRoutes, reportsRoutes, farmerRoutes;
 let buyerRoutes, inputSellerRoutes, logisticsRoutes, financialRoutes, expertRoutes;
 let logisticsDashboardRoutes, logisticsShipmentsRoutes, logisticsVehiclesRoutes;
 let logisticsRoutesRoutes, logisticsColdChainRoutes, paystackController;
 
 try { authRoutes = require('./authRoutes'); console.log('✅ authRoutes loaded'); } catch (e) { console.log('❌ authRoutes failed'); }
-try { paymentRoutes = require('./paymentRoutes'); console.log('✅ paymentRoutes loaded'); } catch (e) { console.log('❌ paymentRoutes failed'); }
+// REMOVED: paymentRoutes import - using hardcoded routes below instead
 try { loanRoutes = require('./loans'); console.log('✅ loanRoutes loaded'); } catch (e) { console.log('❌ loanRoutes failed'); }
 try { reportsRoutes = require('./reportsRoutes'); console.log('✅ reportsRoutes loaded'); } catch (e) { console.log('❌ reportsRoutes failed'); }
 try { farmerRoutes = require('./farmerRoutes'); console.log('✅ farmerRoutes loaded'); } catch (e) { console.log('❌ farmerRoutes failed'); }
@@ -315,7 +314,7 @@ router.get('/payments/verify/:reference', async (req, res) => {
 console.log('🔄 MOUNTING ROUTES...');
 
 if (typeof authRoutes === 'function') { router.use('/auth', authRoutes); console.log('✅ /auth'); }
-if (typeof paymentRoutes === 'function') { router.use('/payments', paymentRoutes); console.log('✅ /payments'); }
+// REMOVED: paymentRoutes mounting - using hardcoded routes above instead
 if (typeof loanRoutes === 'function') { router.use('/loans', loanRoutes); console.log('✅ /loans'); }
 if (typeof reportsRoutes === 'function') { router.use('/reports', reportsRoutes); console.log('✅ /reports'); }
 if (typeof farmerRoutes === 'function') { router.use('/farmer', farmerRoutes); console.log('✅ /farmer'); }
