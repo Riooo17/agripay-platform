@@ -179,7 +179,7 @@ const LogisticsDashboard = () => {
     setTimeout(() => setShowActionMessage(false), 5000);
   };
 
-  // ✅ REAL PAYSTACK PAYMENT FUNCTIONALITY
+  // ✅ FIXED PAYSTACK PAYMENT FUNCTIONALITY
   const processPayment = async (payment) => {
     try {
       setSelectedPayment(payment);
@@ -214,7 +214,7 @@ const LogisticsDashboard = () => {
     }
   };
 
-  // ✅ REAL PAYSTACK PAYMENT SUCCESS HANDLER
+  // ✅ FIXED PAYSTACK PAYMENT SUCCESS HANDLER
   const handlePaymentSuccess = async (paymentData) => {
     try {
       console.log('💰 Payment successful:', paymentData);
@@ -927,7 +927,7 @@ const LogisticsDashboard = () => {
         {renderSection()}
       </main>
 
-      {/* ✅ REAL PAYSTACK MODAL */}
+      {/* ✅ FIXED PAYSTACK MODAL - Now uses the PaystackPayment component */}
       {showPaystackModal && (
         <PaystackPayment
           amount={selectedPayment?.amount || 0}
