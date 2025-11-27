@@ -1,87 +1,57 @@
 const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const authRoutes = require('./routes/auth');
-const financialRoutes = require('./routes/financial');
-const sellerRoutes = require('./routes/seller');
-const buyerRoutes = require('./routes/buyer');
-const logisticsRoutes = require('./routes/logistics');
-const farmerRoutes = require('./routes/farmer');
-const expertRoutes = require('./routes/expert');
-const paystackRoutes = require('./routes/paystack');
+const authController = require('../controllers/authController');
+const { authenticate } = require('../middleware/auth');
+const { body } = require('express-validator');
+const { validationResult } = require('express-validator');
 
-const app = express();
+const router = express.Router();
 
-// Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+// Validation rules
+const registerValidation = [
+  body('email').isEmail().normalizeEmail(),
+  body('password').isLength({ min: 6 }),
+  body('firstName').notEmpty().trim(),
+  body('lastName').notEmpty().trim(),
+  body('role').isIn(['farmer', 'buyer', 'input-seller', 'logistics', 'expert'])
+];
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
+const loginValidation = [
+  body('email').isEmail().normalizeEmail(),
+  body('password').notEmpty()
+];
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Health check route
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    message: 'AgriPay Backend is running',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// API routes with /api prefix
-app.use('/api/auth', authRoutes);
-app.use('/api/financial', financialRoutes);
-app.use('/api/seller', sellerRoutes);
-app.use('/api/buyer', buyerRoutes);
-app.use('/api/logistics', logisticsRoutes);
-app.use('/api/farmer', farmerRoutes);
-app.use('/api/expert', expertRoutes);
-app.use('/api/paystack', paystackRoutes);
-
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `API route not found: ${req.originalUrl}`
-  });
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
-  
-  if (err.type === 'entity.parse.failed') {
+// Routes - NO rate limiting
+router.post('/register', registerValidation, (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid JSON payload'
+      message: 'Validation failed',
+      errors: errors.array()
     });
   }
-  
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'production' ? {} : err.message
-  });
+  authController.register(req, res, next);
 });
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 AgriPay Backend Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+router.post('/login', loginValidation, (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
+    });
+  }
+  authController.login(req, res, next);
 });
 
-module.exports = app;
+router.post('/logout', authenticate, authController.logout);
+router.get('/profile', authenticate, authController.getProfile);
+router.put('/profile', authenticate, authController.updateProfile);
+router.post('/refresh-token', authController.refreshToken);
+router.post('/change-password', authenticate, authController.changePassword);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
+router.put('/verify-farmer/:userId', authenticate, authController.verifyFarmer);
+
+module.exports = router;
