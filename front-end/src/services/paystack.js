@@ -1,256 +1,221 @@
-// services/paystackService.js
-const axios = require('axios');
+// components/payments/PaystackPayment.jsx
+import React, { useState, useEffect } from 'react';
+import { CreditCard, RefreshCw, AlertCircle, X } from 'lucide-react';
 
-class PaystackService {
-  constructor() {
-    this.baseURL = 'https://api.paystack.co';
-    this.secretKey = process.env.PAYSTACK_SECRET_KEY;
-    this.publicKey = process.env.PAYSTACK_PUBLIC_KEY;
-    this.callbackURL = process.env.PAYSTACK_CALLBACK_URL || 'https://agripay-platform.onrender.com/api/paystack/callback';
+const PaystackPayment = ({ 
+  amount, 
+  email, 
+  productName, 
+  onSuccess, 
+  onClose 
+}) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [paystackLoaded, setPaystackLoaded] = useState(false);
+
+  // Load Paystack script dynamically (SAME AS FINANCIAL)
+  useEffect(() => {
+    if (window.PaystackPop) {
+      setPaystackLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
     
-    if (!this.secretKey) {
-      console.warn('⚠️  Paystack secret key not configured');
+    script.onload = () => {
+      console.log('✅ Paystack script loaded successfully');
+      setPaystackLoaded(true);
+    };
+    
+    script.onerror = () => {
+      console.error('❌ Failed to load Paystack script');
+      setError('Failed to load payment system. Please refresh the page.');
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
+  // REAL Paystack Integration (SAME AS FINANCIAL)
+  const initializePayment = () => {
+    if (!paystackLoaded) {
+      setError('Payment system still loading. Please wait...');
+      return;
     }
-  }
 
-  async makeRequest(endpoint, data = null, method = 'GET') {
-    try {
-      const config = {
-        method: method,
-        url: `${this.baseURL}${endpoint}`,
-        headers: {
-          'Authorization': `Bearer ${this.secretKey}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      };
-
-      if (data && method !== 'GET') {
-        config.data = data;
-      }
-
-      console.log(`🔗 Paystack API: ${method} ${endpoint}`);
-      const response = await axios(config);
-      
-      return response.data;
-
-    } catch (error) {
-      console.error('❌ Paystack API error:', {
-        endpoint: endpoint,
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
-      
-      throw new Error(`Paystack API failed: ${error.response?.data?.message || error.message}`);
+    if (!window.PaystackPop) {
+      setError('Payment system not available. Please refresh the page.');
+      return;
     }
-  }
 
-  formatAmount(amount) {
-    // Convert KES to kobo (100 KES = 10000 kobo)
-    return Math.round(amount * 100);
-  }
+    setLoading(true);
+    setError('');
 
-  async initializePayment(email, amount, metadata = {}) {
+    // Your LIVE Paystack Public Key (SAME AS FINANCIAL)
+    const paystackPublicKey = 'pk_live_cf0f48867990a202a1d8a8ce3ab76a7fdf0998a8';
+
+    // Generate unique reference
+    const reference = 'LP_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+    console.log('💰 Initializing Paystack payment:', {
+      email,
+      amount,
+      reference,
+      productName
+    });
+
     try {
-      console.log('💰 Initializing Paystack payment:', { email, amount });
-
-      // Validate inputs
-      if (!email || !amount) {
-        throw new Error('Email and amount are required');
-      }
-
-      if (amount < 1) {
-        throw new Error('Amount must be at least 1 KES');
-      }
-
-      const amountInKobo = this.formatAmount(amount);
-
-      const payload = {
-        email: email,
-        amount: amountInKobo,
+      // Create payment handler (SAME AS FINANCIAL)
+      const handler = window.PaystackPop.setup({
+        key: paystackPublicKey,
+        email: email || 'customer@example.com',
+        amount: amount * 100, // Convert to kobo
         currency: 'KES',
-        channels: ['card', 'mobile_money', 'bank'],
-        callback_url: this.callbackURL,
+        ref: reference,
         metadata: {
           custom_fields: [
             {
-              display_name: "Platform",
-              variable_name: "platform",
-              value: "AgriPay"
+              display_name: "Product",
+              variable_name: "product_name",
+              value: productName
             },
             {
-              display_name: "Payment Type", 
-              variable_name: "payment_type",
-              value: "agricultural_products"
-            },
-            ...(metadata.custom_fields || [])
-          ],
-          ...metadata
+              display_name: "Platform", 
+              variable_name: "platform",
+              value: "AgriPay Logistics"
+            }
+          ]
+        },
+        callback: function(response) {
+          // Payment successful
+          console.log('✅ Payment successful:', response);
+          
+          setLoading(false);
+          onSuccess({
+            amount: amount,
+            reference: response.reference,
+            transactionId: response.transaction,
+            status: 'success'
+          });
+        },
+        onClose: function() {
+          // Payment window closed
+          console.log('Payment window closed by user');
+          setLoading(false);
         }
-      };
-
-      console.log('📤 Sending payment initialization to Paystack...');
-      const response = await this.makeRequest('/transaction/initialize', payload, 'POST');
-
-      if (!response.status) {
-        throw new Error(response.message || 'Failed to initialize payment');
-      }
-
-      console.log('✅ Payment initialized successfully:', {
-        reference: response.data.reference,
-        amount: amount,
-        email: email
       });
 
-      return {
-        success: true,
-        authorization_url: response.data.authorization_url,
-        access_code: response.data.access_code,
-        reference: response.data.reference
-      };
-
+      handler.openIframe();
     } catch (error) {
-      console.error('❌ Payment initialization failed:', error.message);
-      
-      return {
-        success: false,
-        error: error.message,
-        errorCode: 'PAYMENT_INIT_FAILED'
-      };
+      console.error('❌ Paystack initialization error:', error);
+      setError('Failed to initialize payment. Please try again.');
+      setLoading(false);
     }
-  }
+  };
 
-  async verifyPayment(reference) {
-    try {
-      console.log('🔍 Verifying Paystack payment:', reference);
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-md w-full mx-auto shadow-2xl">
+        <div className="bg-green-600 text-white p-6 rounded-t-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <CreditCard className="h-6 w-6" />
+              <div>
+                <h3 className="text-xl font-bold">Payment Request</h3>
+                <p className="text-green-100">Secure payment via Paystack</p>
+              </div>
+            </div>
+            <button 
+              onClick={onClose}
+              className="text-white hover:text-gray-200 text-lg font-semibold"
+              disabled={loading}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
 
-      if (!reference) {
-        throw new Error('Payment reference is required');
-      }
+        <div className="p-6">
+          {/* Payment Details */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-600">Service:</span>
+              <span className="font-semibold text-gray-800">{productName}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Amount:</span>
+              <span className="text-2xl font-bold text-green-600">
+                KES {amount?.toLocaleString()}
+              </span>
+            </div>
+          </div>
 
-      const response = await this.makeRequest(`/transaction/verify/${reference}`);
+          {/* Loading State */}
+          {!paystackLoaded && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-center">
+                <RefreshCw className="h-5 w-5 text-blue-500 animate-spin mr-2" />
+                <p className="text-blue-700 text-sm">Loading payment system...</p>
+              </div>
+            </div>
+          )}
 
-      if (!response.status) {
-        throw new Error(response.message || 'Verification failed');
-      }
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            </div>
+          )}
 
-      const transaction = response.data;
+          {/* Payment Action */}
+          <div className="space-y-3">
+            <button
+              onClick={initializePayment}
+              disabled={loading || !paystackLoaded}
+              className="w-full bg-green-600 text-white py-4 rounded-lg hover:bg-green-700 disabled:opacity-50 font-bold text-lg transition-colors flex items-center justify-center"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="h-5 w-5 animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  Pay via Paystack
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 font-medium disabled:opacity-50"
+            >
+              Cancel Payment
+            </button>
+          </div>
 
-      console.log('📊 Payment verification result:', {
-        reference: reference,
-        status: transaction.status,
-        amount: transaction.amount,
-        paid: transaction.status === 'success'
-      });
+          {/* Payment Methods Info */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-700 text-center">
+              <strong>Accepted Methods:</strong> Card, Bank Transfer, Mobile Money
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-      return {
-        success: true,
-        paid: transaction.status === 'success',
-        status: transaction.status,
-        amount: transaction.amount / 100, // Convert back to KES
-        currency: transaction.currency,
-        reference: transaction.reference,
-        paid_at: transaction.paid_at,
-        customer: transaction.customer,
-        gateway_response: transaction.gateway_response
-      };
-
-    } catch (error) {
-      console.error('❌ Payment verification failed:', error.message);
-      
-      return {
-        success: false,
-        error: error.message,
-        errorCode: 'VERIFICATION_FAILED'
-      };
-    }
-  }
-
-  async listBanks() {
-    try {
-      console.log('🏦 Fetching banks from Paystack...');
-      
-      const response = await this.makeRequest('/bank');
-      
-      return {
-        success: true,
-        banks: response.data
-      };
-
-    } catch (error) {
-      console.error('❌ Failed to fetch banks:', error.message);
-      
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  async createTransferRecipient(name, accountNumber, bankCode) {
-    try {
-      console.log('👤 Creating transfer recipient:', { name, bankCode });
-
-      const payload = {
-        type: 'nuban',
-        name: name,
-        account_number: accountNumber,
-        bank_code: bankCode,
-        currency: 'KES'
-      };
-
-      const response = await this.makeRequest('/transferrecipient', payload, 'POST');
-
-      return {
-        success: true,
-        recipient_code: response.data.recipient_code,
-        details: response.data
-      };
-
-    } catch (error) {
-      console.error('❌ Failed to create transfer recipient:', error.message);
-      
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  async testConnection() {
-    try {
-      console.log('🔗 Testing Paystack connection...');
-      
-      const response = await this.makeRequest('/bank?perPage=1');
-      
-      return {
-        success: true,
-        message: 'Paystack connection successful',
-        banks_count: response.meta.total,
-        mode: this.secretKey?.startsWith('sk_live_') ? 'LIVE' : 'TEST'
-      };
-
-    } catch (error) {
-      console.error('❌ Paystack connection test failed:', error.message);
-      
-      return {
-        success: false,
-        error: error.message,
-        mode: this.secretKey?.startsWith('sk_live_') ? 'LIVE' : 'TEST'
-      };
-    }
-  }
-
-  // Webhook signature verification (for production)
-  verifyWebhookSignature(payload, signature) {
-    const crypto = require('crypto');
-    const hash = crypto.createHmac('sha512', this.secretKey)
-                      .update(JSON.stringify(payload))
-                      .digest('hex');
-    return hash === signature;
-  }
-}
-
-const paystackService = new PaystackService();
-module.exports = paystackService;
+export default PaystackPayment;
