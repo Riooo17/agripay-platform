@@ -12,7 +12,7 @@ const MarketInsight = require('../models/MarketInsight');
 const mongoose = require('mongoose');
 
 // =============================================
-// ✅ DASHBOARD DATA API - FIXED OBJECTID ERROR
+// ✅ DASHBOARD DATA API - FIXED PROFILE VALIDATION
 // =============================================
 router.get('/dashboard', authenticate, async (req, res) => {
   try {
@@ -35,6 +35,22 @@ router.get('/dashboard', authenticate, async (req, res) => {
       });
     }
 
+    // 🚀 CRITICAL FIX: Ensure profile exists with required fields
+    if (!farmer.profile) {
+      farmer.profile = {
+        firstName: 'Farmer',
+        lastName: 'User',
+        phone: '',
+        location: { address: 'Location not set' }
+      };
+    } else {
+      // Ensure required fields exist
+      if (!farmer.profile.firstName) farmer.profile.firstName = 'Farmer';
+      if (!farmer.profile.lastName) farmer.profile.lastName = 'User';
+      if (!farmer.profile.phone) farmer.profile.phone = '';
+      if (!farmer.profile.location) farmer.profile.location = { address: 'Location not set' };
+    }
+
     // Ensure farmer has required profile data
     if (!farmer.farmerProfile) {
       farmer.farmerProfile = {
@@ -43,7 +59,6 @@ router.get('/dashboard', authenticate, async (req, res) => {
         mainCrops: ['maize', 'vegetables'],
         farmingExperience: 2
       };
-      await farmer.save();
     }
 
     // Ensure farmer has stats
@@ -56,6 +71,10 @@ router.get('/dashboard', authenticate, async (req, res) => {
         customerRating: 0,
         reviewCount: 0
       };
+    }
+
+    // Save only if there were changes
+    if (farmer.isModified()) {
       await farmer.save();
     }
 
@@ -106,7 +125,15 @@ router.get('/dashboard', authenticate, async (req, res) => {
     farmer.stats.totalProducts = totalProducts;
     farmer.stats.completedOrders = completedOrders;
     farmer.stats.totalRevenue = earningsResult[0]?.totalEarnings || 0;
-    await farmer.save();
+    
+    // Save updated stats
+    await User.findByIdAndUpdate(req.user._id, {
+      $set: {
+        'stats.totalProducts': totalProducts,
+        'stats.completedOrders': completedOrders,
+        'stats.totalRevenue': earningsResult[0]?.totalEarnings || 0
+      }
+    });
 
     res.json({
       success: true,
@@ -115,7 +142,7 @@ router.get('/dashboard', authenticate, async (req, res) => {
         name: farmer.profile.firstName + ' ' + farmer.profile.lastName,
         email: farmer.email,
         farmName: farmer.farmerProfile.farmName,
-        location: farmer.profile.location?.address || 'Location not set',
+        location: farmer.profile.location.address,
         joinDate: farmer.createdAt,
         farmSize: farmer.farmerProfile.farmSize,
         mainCrops: farmer.farmerProfile.mainCrops,
@@ -496,6 +523,17 @@ router.get('/profile', authenticate, async (req, res) => {
       });
     }
 
+    // 🚀 FIX: Ensure profile exists
+    if (!farmer.profile) {
+      farmer.profile = {
+        firstName: 'Farmer',
+        lastName: 'User',
+        phone: '',
+        location: { address: 'Location not set' }
+      };
+      await farmer.save();
+    }
+
     res.json({
       success: true,
       data: {
@@ -534,6 +572,16 @@ router.put('/profile', authenticate, async (req, res) => {
         success: false,
         message: 'Farmer not found'
       });
+    }
+
+    // 🚀 FIX: Ensure profile exists before updating
+    if (!farmer.profile) {
+      farmer.profile = {
+        firstName: 'Farmer',
+        lastName: 'User',
+        phone: '',
+        location: { address: 'Location not set' }
+      };
     }
 
     // Update basic profile
