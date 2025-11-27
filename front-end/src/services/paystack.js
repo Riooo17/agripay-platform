@@ -6,7 +6,7 @@ class PaystackService {
     this.baseURL = 'https://api.paystack.co';
     this.secretKey = process.env.PAYSTACK_SECRET_KEY;
     this.publicKey = process.env.PAYSTACK_PUBLIC_KEY;
-    this.callbackURL = process.env.PAYSTACK_CALLBACK_URL || 'http://localhost:5000/api/paystack/callback';
+    this.callbackURL = process.env.PAYSTACK_CALLBACK_URL || 'https://agripay-platform.onrender.com/api/paystack/callback';
     
     if (!this.secretKey) {
       console.warn('⚠️  Paystack secret key not configured');
