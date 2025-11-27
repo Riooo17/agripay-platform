@@ -1,7 +1,9 @@
-﻿// src/pages/BuyerDashboard.jsx - COMPLETELY FIXED WITH WORKING BUTTONS
+﻿// src/pages/BuyerDashboard.jsx - OPTIMIZED WITH UNIFIED PAYMENT SYSTEM
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import PaystackPayment from '../components/payments/PaystackPayment';
 import DashboardOverview from '../components/dashboard/DashboardOverview';
 import ProductDiscovery from '../components/dashboard/ProductDiscovery';
 import OrderManagement from '../components/dashboard/OrderManagement';
@@ -10,279 +12,57 @@ import SupplierRelations from '../components/dashboard/SupplierRelations';
 import MarketIntelligence from '../components/dashboard/MarketIntelligence';
 import ShoppingCart from '../components/dashboard/ShoppingCart';
 import NotificationsPanel from '../components/dashboard/NotificationsPanel';
-import { buyerService } from '../services/buyerService';
-
-// REAL Paystack Payment Component for Buyer - FIXED
-const PaystackPayment = ({ 
-  order, 
-  amount, 
-  productName, 
-  onSuccess, 
-  onClose 
-}) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [paystackLoaded, setPaystackLoaded] = useState(false);
-
-  // Load Paystack script dynamically
-  useEffect(() => {
-    if (window.PaystackPop) {
-      setPaystackLoaded(true);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.async = true;
-    
-    script.onload = () => {
-      console.log('✅ Paystack script loaded successfully');
-      setPaystackLoaded(true);
-    };
-    
-    script.onerror = () => {
-      console.error('❌ Failed to load Paystack script');
-      setError('Failed to load payment system. Please refresh the page.');
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
-  }, []);
-
-  // REAL Paystack Integration for Buyer
-  const initializePayment = () => {
-    if (!paystackLoaded) {
-      setError('Payment system still loading. Please wait...');
-      return;
-    }
-
-    if (!window.PaystackPop) {
-      setError('Payment system not available. Please refresh the page.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    // Your LIVE Paystack Public Key
-    const paystackPublicKey = 'pk_live_cf0f48867990a202a1d8a8ce3ab76a7fdf0998a8';
-
-    // Generate unique reference
-    const reference = 'BUYER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-
-    console.log('💰 Buyer Payment Initializing:', {
-      product: productName,
-      amount,
-      reference
-    });
-
-    try {
-      // Create payment handler
-      const handler = window.PaystackPop.setup({
-        key: paystackPublicKey,
-        email: order?.buyer?.email || 'buyer@example.com',
-        amount: amount * 100, // Convert to kobo
-        currency: 'KES',
-        ref: reference,
-        metadata: {
-          custom_fields: [
-            {
-              display_name: "Buyer Name",
-              variable_name: "buyer_name",
-              value: order?.buyer?.name || 'AgriPay Buyer'
-            },
-            {
-              display_name: "Product",
-              variable_name: "product_name", 
-              value: productName
-            },
-            {
-              display_name: "Order Type",
-              variable_name: "order_type",
-              value: order?.type || 'product_purchase'
-            }
-          ]
-        },
-        callback: function(response) {
-          // Payment successful
-          console.log('✅ Buyer Payment successful:', response);
-          
-          setLoading(false);
-          onSuccess({
-            amount: amount,
-            order: order,
-            reference: response.reference,
-            transactionId: response.transaction,
-            status: 'success',
-            productName: productName
-          });
-        },
-        onClose: function() {
-          // Payment window closed
-          console.log('Buyer payment window closed');
-          setLoading(false);
-        }
-      });
-
-      handler.openIframe();
-    } catch (error) {
-      console.error('❌ Buyer Payment initialization error:', error);
-      setError('Failed to initialize payment. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full mx-auto shadow-2xl">
-        <div className="bg-green-600 text-white p-6 rounded-t-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">🛒</span>
-              <div>
-                <h3 className="text-xl font-bold">Complete Purchase</h3>
-                <p className="text-green-100">Secure payment via Paystack</p>
-              </div>
-            </div>
-            <button 
-              onClick={onClose}
-              className="text-white hover:text-gray-200 text-lg font-semibold"
-              disabled={loading}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Order Details */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-600">Product:</span>
-              <span className="font-semibold text-gray-800">{productName}</span>
-            </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-600">Order Type:</span>
-              <span className="font-semibold text-gray-800">
-                {order?.type === 'cart_checkout' ? 'Cart Checkout' : 'Single Product'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Amount:</span>
-              <span className="text-2xl font-bold text-green-600">
-                KES {amount?.toLocaleString()}
-              </span>
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {!paystackLoaded && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-                <p className="text-blue-700 text-sm">Loading payment system...</p>
-              </div>
-            </div>
-          )}
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center">
-                <span className="text-red-500 mr-2">⚠️</span>
-                <p className="text-red-700 text-sm">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Payment Action */}
-          <div className="space-y-3">
-            <button
-              onClick={initializePayment}
-              disabled={loading || !paystackLoaded}
-              className="w-full bg-green-600 text-white py-4 rounded-lg hover:bg-green-700 disabled:opacity-50 font-bold text-lg transition-colors flex items-center justify-center"
-            >
-              {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <span className="mr-2">💳</span>
-                  Pay via Paystack
-                </>
-              )}
-            </button>
-            
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 font-medium disabled:opacity-50"
-            >
-              Cancel Payment
-            </button>
-          </div>
-
-          {/* Payment Methods Info */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700 text-center">
-              <strong>Accepted Methods:</strong> Card, Bank Transfer, Mobile Money
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const BuyerDashboard = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { totalItems, clearCart, cartItems } = useCart();
   const [activeSection, setActiveSection] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [actionMessage, setActionMessage] = useState('');
+  const [showActionMessage, setShowActionMessage] = useState(false);
+  
+  // Payment state - USING UNIFIED SYSTEM
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState(null);
+
+  // UI states
   const [notifications, setNotifications] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [usingMockData, setUsingMockData] = useState(false);
-  
-  // NEW: Paystack payment state
-  const [showPaystack, setShowPaystack] = useState(false);
-  const [currentOrder, setCurrentOrder] = useState(null);
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [paymentProduct, setPaymentProduct] = useState('');
 
-  // FIXED: Enhanced mock data with working buttons
-  const generateMockData = (realData) => {
-    const baseData = realData || {};
-    
-    const mockDashboardData = {
+  // Enhanced mock data
+  const generateEnhancedMockData = () => {
+    return {
       overview: {
-        activeOrders: baseData.overview?.activeOrders || 2,
-        totalSpent: baseData.overview?.totalSpent || 34250,
-        favoriteSuppliersCount: baseData.overview?.favoriteSuppliersCount || 3,
-        cartItems: totalItems
+        activeOrders: 3,
+        totalSpent: 45250,
+        favoriteSuppliersCount: 4,
+        cartItems: totalItems,
+        monthlySavings: 12500,
+        completedOrders: 12
       },
-      recentOrders: baseData.recentOrders?.length > 0 ? baseData.recentOrders : [
+      recentOrders: [
         {
           _id: 'ord_001',
-          productName: 'Premium Maize',
+          productName: 'Premium Organic Maize',
           orderId: 'ORD-001',
           amount: 22500,
           status: 'delivered',
           orderDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          deliveryDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
           trackingNumber: 'TRK-789012',
+          supplier: 'Green Valley Farms',
+          quantity: 500,
+          unit: 'kg',
           buyer: {
             name: user?.name || 'Buyer',
-            email: user?.email || 'buyer@example.com'
+            email: user?.email || 'buyer@example.com',
+            phone: user?.phone || '+254700000000'
           }
         },
         {
@@ -290,37 +70,84 @@ const BuyerDashboard = () => {
           productName: 'Fresh Tomatoes',
           orderId: 'ORD-002',
           amount: 9600,
-          status: 'pending_payment',
+          status: 'processing',
           orderDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
           trackingNumber: 'TRK-789013',
+          supplier: 'Sunrise Farms',
+          quantity: 80,
+          unit: 'kg',
           buyer: {
             name: user?.name || 'Buyer',
-            email: user?.email || 'buyer@example.com'
+            email: user?.email || 'buyer@example.com',
+            phone: user?.phone || '+254700000000'
+          }
+        },
+        {
+          _id: 'ord_003',
+          productName: 'Organic Beans',
+          orderId: 'ORD-003',
+          amount: 13150,
+          status: 'pending_payment',
+          orderDate: new Date().toISOString(),
+          supplier: 'Mountain View Organics',
+          quantity: 150,
+          unit: 'kg',
+          buyer: {
+            name: user?.name || 'Buyer',
+            email: user?.email || 'buyer@example.com',
+            phone: user?.phone || '+254700000000'
           }
         }
       ],
-      favoriteSuppliers: baseData.favoriteSuppliers?.length > 0 ? baseData.favoriteSuppliers : [
+      favoriteSuppliers: [
         {
           _id: 'sup_001',
           name: 'Green Valley Farms',
           location: 'Nakuru, Kenya',
           rating: 4.8,
-          products: ['Maize', 'Beans', 'Wheat'],
+          products: ['Maize', 'Beans', 'Wheat', 'Barley'],
           orderCount: 12,
           responseTime: '2 hours',
-          contact: '+254712345678'
+          contact: '+254712345678',
+          certification: 'Organic Certified',
+          deliveryAreas: ['Nairobi', 'Nakuru', 'Eldoret']
+        },
+        {
+          _id: 'sup_002',
+          name: 'Sunrise Farms',
+          location: 'Kiambu, Kenya',
+          rating: 4.6,
+          products: ['Tomatoes', 'Cabbage', 'Spinach', 'Kale'],
+          orderCount: 8,
+          responseTime: '3 hours',
+          contact: '+254723456789',
+          certification: 'Fresh Produce',
+          deliveryAreas: ['Nairobi', 'Thika', 'Machakos']
+        },
+        {
+          _id: 'sup_003',
+          name: 'Mountain View Organics',
+          location: 'Meru, Kenya',
+          rating: 4.9,
+          products: ['Beans', 'Peas', 'Lentils', 'Chickpeas'],
+          orderCount: 5,
+          responseTime: '4 hours',
+          contact: '+254734567890',
+          certification: 'Organic & Fair Trade',
+          deliveryAreas: ['Nairobi', 'Meru', 'Embu', 'Nanyuki']
         }
       ],
-      recommendedProducts: baseData.recommendedProducts?.length > 0 ? baseData.recommendedProducts : [
+      recommendedProducts: [
         {
           _id: 'prod_001',
           name: 'Fresh Organic Maize',
-          description: 'High quality organic maize from our farm in the Rift Valley',
+          description: 'High quality organic maize from our farm in the Rift Valley. Grown without synthetic pesticides or fertilizers.',
           category: 'grains',
           price: 45,
           unit: 'kg',
-          quantity: 150,
-          minOrder: 1,
+          quantity: 1500,
+          minOrder: 50,
           farmer: {
             profile: {
               firstName: 'John',
@@ -328,125 +155,381 @@ const BuyerDashboard = () => {
               businessName: 'Green Valley Farms'
             },
             farmerProfile: {
-              farmName: 'Green Valley Organic Farm'
+              farmName: 'Green Valley Organic Farm',
+              location: 'Nakuru'
             }
           },
           qualityGrade: 'premium',
           isOrganic: true,
-          status: 'available'
+          status: 'available',
+          harvestDate: '2024-01-15',
+          deliveryTime: '2-3 days',
+          rating: 4.8,
+          reviews: 24
         },
         {
           _id: 'prod_002',
           name: 'Fresh Tomatoes',
-          description: 'Fresh red tomatoes from local farms',
+          description: 'Fresh red tomatoes from local farms. Perfect for cooking, salads, and processing.',
           category: 'vegetables',
           price: 120,
           unit: 'kg',
-          quantity: 80,
-          minOrder: 2,
+          quantity: 800,
+          minOrder: 20,
           farmer: {
             profile: {
               firstName: 'Mary',
               lastName: 'Wanjiku',
               businessName: 'Sunrise Farms'
+            },
+            farmerProfile: {
+              farmName: 'Sunrise Vegetable Farm',
+              location: 'Kiambu'
             }
           },
           qualityGrade: 'standard',
           isOrganic: false,
-          status: 'available'
+          status: 'available',
+          harvestDate: '2024-01-18',
+          deliveryTime: '1-2 days',
+          rating: 4.5,
+          reviews: 18
+        },
+        {
+          _id: 'prod_003',
+          name: 'Organic Beans',
+          description: 'Premium organic beans rich in protein and fiber. Perfect for family consumption and commercial use.',
+          category: 'legumes',
+          price: 85,
+          unit: 'kg',
+          quantity: 1200,
+          minOrder: 25,
+          farmer: {
+            profile: {
+              firstName: 'Peter',
+              lastName: 'Gitonga',
+              businessName: 'Mountain View Organics'
+            },
+            farmerProfile: {
+              farmName: 'Mountain View Organic Farm',
+              location: 'Meru'
+            }
+          },
+          qualityGrade: 'premium',
+          isOrganic: true,
+          status: 'available',
+          harvestDate: '2024-01-12',
+          deliveryTime: '3-4 days',
+          rating: 4.9,
+          reviews: 32
+        },
+        {
+          _id: 'prod_004',
+          name: 'Fresh Avocados',
+          description: 'Hass avocados, creamy and delicious. Perfect for export quality and local markets.',
+          category: 'fruits',
+          price: 60,
+          unit: 'piece',
+          quantity: 500,
+          minOrder: 100,
+          farmer: {
+            profile: {
+              firstName: 'Sarah',
+              lastName: 'Nyong\'o',
+              businessName: 'Tropical Fruits Ltd'
+            },
+            farmerProfile: {
+              farmName: 'Tropical Fruits Farm',
+              location: 'Murang\'a'
+            }
+          },
+          qualityGrade: 'export',
+          isOrganic: true,
+          status: 'available',
+          harvestDate: '2024-01-20',
+          deliveryTime: '2-3 days',
+          rating: 4.7,
+          reviews: 15
         }
       ],
-      quickStats: baseData.quickStats || {
-        completedOrders: 5,
-        pendingReviews: 1,
-        wishlistItems: 2
+      quickStats: {
+        completedOrders: 12,
+        pendingReviews: 3,
+        wishlistItems: 5,
+        monthlyBudget: 100000,
+        savingsThisMonth: 12500
+      },
+      marketInsights: {
+        priceTrends: {
+          maize: -8,
+          tomatoes: +5,
+          beans: -3,
+          avocados: +12
+        },
+        demandLevels: {
+          maize: 'high',
+          tomatoes: 'medium',
+          beans: 'high',
+          avocados: 'very high'
+        }
       }
     };
-
-    const mockNotifications = [
-      {
-        id: 1,
-        type: 'order_update',
-        title: 'Order Shipped',
-        message: 'Your order ORD-002 has been shipped and is on the way',
-        time: '2 hours ago',
-        read: false,
-        orderId: 'ORD-002'
-      },
-      {
-        id: 2,
-        type: 'price_alert', 
-        title: 'Price Drop Alert',
-        message: 'Maize prices decreased by 8% in your region',
-        time: '5 hours ago',
-        read: false,
-        productId: 'prod_001'
-      },
-      {
-        id: 3,
-        type: 'supplier_news',
-        title: 'New Products Available',
-        message: 'Green Valley Farms added new organic products',
-        time: '1 day ago',
-        read: true,
-        supplierId: 'sup_001'
-      }
-    ];
-
-    return { mockDashboardData, mockNotifications };
   };
 
-  // FIXED: Load real data on component mount
+  const enhancedMockNotifications = [
+    {
+      id: 1,
+      type: 'order_update',
+      title: 'Order Shipped',
+      message: 'Your order ORD-002 has been shipped and is on the way. Tracking: TRK-789013',
+      time: '2 hours ago',
+      read: false,
+      orderId: 'ORD-002',
+      priority: 'high'
+    },
+    {
+      id: 2,
+      type: 'price_alert', 
+      title: 'Price Drop Alert',
+      message: 'Maize prices decreased by 8% in your region. Great time to buy!',
+      time: '5 hours ago',
+      read: false,
+      productId: 'prod_001',
+      priority: 'medium'
+    },
+    {
+      id: 3,
+      type: 'supplier_news',
+      title: 'New Products Available',
+      message: 'Green Valley Farms added new organic products to their catalog',
+      time: '1 day ago',
+      read: true,
+      supplierId: 'sup_001',
+      priority: 'low'
+    },
+    {
+      id: 4,
+      type: 'delivery_reminder',
+      title: 'Delivery Expected Tomorrow',
+      message: 'Your order ORD-001 is scheduled for delivery tomorrow between 9 AM - 12 PM',
+      time: '3 hours ago',
+      read: false,
+      orderId: 'ORD-001',
+      priority: 'high'
+    }
+  ];
+
+  // Load dashboard data
   useEffect(() => {
-    const loadDashboardData = async () => {
-      setLoading(true);
-      
-      try {
-        const [dashboardResult, notificationsResult] = await Promise.all([
-          buyerService.getDashboardData(),
-          buyerService.getNotifications()
-        ]);
-
-        const hasSubstantialData = dashboardResult && 
-          (dashboardResult.recommendedProducts?.length > 0 || dashboardResult.overview?.totalSpent > 0);
-        
-        const hasRealNotifications = notificationsResult && 
-          (notificationsResult.notifications?.length > 0 || notificationsResult.length > 0);
-
-        if (hasSubstantialData) {
-          console.log('✅ Using real backend data');
-          setDashboardData(dashboardResult);
-          setUsingMockData(false);
-        } else {
-          console.log('🔄 Enhancing with mock data');
-          const { mockDashboardData } = generateMockData(dashboardResult);
-          setDashboardData(mockDashboardData);
-          setUsingMockData(true);
-        }
-
-        if (hasRealNotifications) {
-          const realNotifications = notificationsResult.notifications || notificationsResult;
-          setNotifications(realNotifications);
-        } else {
-          console.log('🔄 Adding mock notifications');
-          const { mockNotifications } = generateMockData();
-          setNotifications(mockNotifications);
-        }
-
-      } catch (error) {
-        console.error('❌ Failed to load data, using enhanced mock:', error);
-        const { mockDashboardData, mockNotifications } = generateMockData();
-        setDashboardData(mockDashboardData);
-        setNotifications(mockNotifications);
-        setUsingMockData(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadDashboardData();
   }, []);
 
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Try to fetch from backend first
+      const token = localStorage.getItem('agripay_token');
+      let backendData = {};
+      
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agripay-platform.onrender.com/api';
+        const response = await fetch(`${API_BASE_URL}/buyer/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          backendData = await response.json();
+          console.log('✅ Buyer dashboard data loaded:', backendData);
+        }
+      } catch (error) {
+        console.log('⚠️ Using enhanced mock data:', error.message);
+      }
+
+      // Enhanced dashboard data
+      const enhancedData = generateEnhancedMockData();
+      
+      // Merge with backend data if available
+      if (backendData && Object.keys(backendData).length > 0) {
+        setDashboardData({ ...enhancedData, ...backendData });
+        setUsingMockData(false);
+      } else {
+        setDashboardData(enhancedData);
+        setUsingMockData(true);
+      }
+
+      setNotifications(enhancedMockNotifications);
+      showMessage('🛒 Buyer dashboard loaded successfully!');
+      
+    } catch (error) {
+      console.error('Error loading buyer dashboard:', error);
+      showMessage('❌ Failed to load buyer data');
+      // Fallback to mock data
+      setDashboardData(generateEnhancedMockData());
+      setNotifications(enhancedMockNotifications);
+      setUsingMockData(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show action message
+  const showMessage = (message) => {
+    setActionMessage(message);
+    setShowActionMessage(true);
+    setTimeout(() => setShowActionMessage(false), 5000);
+  };
+
+  // ✅ OPTIMIZED: Payment functions using unified system
+  const handleBuyNow = (product) => {
+    console.log('🛒 Buying product:', product.name);
+    
+    const totalAmount = product.price * product.minOrder;
+    
+    setPaymentConfig({
+      amount: totalAmount,
+      productName: `${product.name} - ${product.minOrder} ${product.unit}`,
+      email: user?.email || 'buyer@example.com',
+      description: `Purchase of ${product.minOrder} ${product.unit} ${product.name} from ${product.farmer?.profile?.businessName || 'Supplier'}`,
+      userType: 'buyer'
+    });
+    setShowPaymentModal(true);
+    
+    showMessage(`🛒 Preparing to purchase ${product.name}...`);
+  };
+
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      showMessage('❌ Your cart is empty!');
+      return;
+    }
+
+    const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const productNames = cartItems.map(item => item.name).join(', ');
+    
+    console.log('💰 Checking out cart:', { items: cartItems.length, totalAmount });
+    
+    setPaymentConfig({
+      amount: totalAmount,
+      productName: `Cart Checkout - ${cartItems.length} items`,
+      email: user?.email || 'buyer@example.com',
+      description: `Purchase of ${cartItems.length} items: ${productNames}`,
+      userType: 'buyer'
+    });
+    setShowPaymentModal(true);
+    
+    showMessage(`💰 Processing cart checkout for ${cartItems.length} items...`);
+  };
+
+  const handlePaymentSuccess = (paymentData) => {
+    console.log('✅ Payment successful:', paymentData);
+    setShowPaymentModal(false);
+    
+    showMessage(`✅ Payment Successful! KES ${paymentData.amount} paid for ${paymentData.productName}`);
+    
+    // Clear cart if it was a cart checkout
+    if (paymentData.productName.includes('Cart Checkout')) {
+      clearCart();
+      showMessage('🛒 Cart cleared after successful payment!');
+    }
+    
+    // Refresh dashboard data
+    loadDashboardData();
+  };
+
+  // ✅ OPTIMIZED: Navigation and UI functions
+  const handleSectionChange = (section) => {
+    console.log('📱 Changing section to:', section);
+    setActiveSection(section);
+    setShowNotifications(false);
+    setShowCart(false);
+    setShowUserMenu(false);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setActiveSection('discovery');
+      showMessage(`🔍 Searching for: ${searchQuery}`);
+      console.log('🔍 Searching for:', searchQuery);
+    }
+  };
+
+  // ✅ OPTIMIZED: Notification functions
+  const markAllAsRead = () => {
+    const updatedNotifications = notifications.map(notification => ({
+      ...notification,
+      read: true
+    }));
+    setNotifications(updatedNotifications);
+    showMessage('✅ All notifications marked as read');
+  };
+
+  const markAsRead = (notificationId) => {
+    const updatedNotifications = notifications.map(notification => 
+      notification.id === notificationId 
+        ? { ...notification, read: true }
+        : notification
+    );
+    setNotifications(updatedNotifications);
+    showMessage('✅ Notification marked as read');
+  };
+
+  // ✅ OPTIMIZED: Refresh data function
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      await loadDashboardData();
+      showMessage('🔄 Data refreshed successfully!');
+    } catch (error) {
+      console.error('Failed to refresh data:', error);
+      showMessage('❌ Failed to refresh data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ OPTIMIZED: Handle logout
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      console.log('👋 Buyer logging out');
+      await logout();
+      navigate('/');
+    }
+  };
+
+  // Calculate unread notifications
+  const unreadNotifications = notifications.filter(n => !n.read).length;
+
+  // Safe quick stats with fallbacks
+  const quickStats = {
+    activeOrders: dashboardData?.overview?.activeOrders || 0,
+    cartItems: totalItems,
+    savedSuppliers: dashboardData?.overview?.favoriteSuppliersCount || 0,
+    totalSpent: dashboardData?.overview?.totalSpent || 0,
+    monthlySavings: dashboardData?.overview?.monthlySavings || 0,
+    completedOrders: dashboardData?.quickStats?.completedOrders || 0
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading Your Buyer Dashboard...</p>
+          <p className="text-sm text-gray-500">Preparing your shopping experience</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Section configuration
   const sections = {
     overview: { name: 'Dashboard Overview', icon: '📊' },
     discovery: { name: 'Product Discovery', icon: '🔍' },
@@ -456,196 +539,15 @@ const BuyerDashboard = () => {
     intelligence: { name: 'Market Intelligence', icon: '📈' }
   };
 
-  // FIXED: Calculate unread notifications
-  const unreadNotifications = notifications.filter(n => !n.read).length;
-
-  // FIXED: Search function
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      setActiveSection('discovery');
-      console.log('🔍 Searching for:', searchQuery);
-    }
-  };
-
-  // FIXED: Mark all notifications as read
-  const markAllAsRead = () => {
-    const updatedNotifications = notifications.map(notification => ({
-      ...notification,
-      read: true
-    }));
-    setNotifications(updatedNotifications);
-    console.log('✅ All notifications marked as read');
-  };
-
-  // FIXED: Mark single notification as read
-  const markAsRead = (notificationId) => {
-    const updatedNotifications = notifications.map(notification => 
-      notification.id === notificationId 
-        ? { ...notification, read: true }
-        : notification
-    );
-    setNotifications(updatedNotifications);
-    console.log('✅ Notification marked as read:', notificationId);
-  };
-
-  // FIXED: Refresh data function
-  const refreshData = async () => {
-    setLoading(true);
-    try {
-      const [dashboardResult, notificationsResult] = await Promise.all([
-        buyerService.getDashboardData(),
-        buyerService.getNotifications()
-      ]);
-
-      const hasSubstantialData = dashboardResult && 
-        (dashboardResult.recommendedProducts?.length > 0 || dashboardResult.overview?.totalSpent > 0);
-
-      if (hasSubstantialData) {
-        setDashboardData(dashboardResult);
-        setUsingMockData(false);
-      } else {
-        const { mockDashboardData } = generateMockData(dashboardResult);
-        setDashboardData(mockDashboardData);
-        setUsingMockData(true);
-      }
-
-      const hasRealNotifications = notificationsResult && 
-        (notificationsResult.notifications?.length > 0 || notificationsResult.length > 0);
-
-      if (hasRealNotifications) {
-        const realNotifications = notificationsResult.notifications || notificationsResult;
-        setNotifications(realNotifications);
-      }
-
-      console.log('✅ Data refreshed successfully');
-
-    } catch (error) {
-      console.error('Failed to refresh data:', error);
-      alert('Failed to refresh data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // FIXED: Handle logout
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      console.log('👋 User logging out');
-      logout();
-      setShowUserMenu(false);
-    }
-  };
-
-  // NEW: Handle direct product purchase
-  const handleBuyNow = (product) => {
-    console.log('🛒 Buying product:', product.name);
-    setCurrentOrder({
-      type: 'single_product',
-      product: product,
-      buyer: {
-        name: user?.name,
-        email: user?.email
-      }
-    });
-    setPaymentAmount(product.price * product.minOrder);
-    setPaymentProduct(product.name);
-    setShowPaystack(true);
-  };
-
-  // NEW: Handle cart checkout
-  const handleCheckout = () => {
-    if (cartItems.length === 0) {
-      alert('Your cart is empty!');
-      return;
-    }
-
-    const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    console.log('💰 Checking out cart:', { items: cartItems.length, totalAmount });
-    
-    setCurrentOrder({
-      type: 'cart_checkout',
-      items: cartItems,
-      buyer: {
-        name: user?.name,
-        email: user?.email
-      }
-    });
-    setPaymentAmount(totalAmount);
-    setPaymentProduct('Cart Checkout');
-    setShowPaystack(true);
-  };
-
-  // NEW: Handle successful Paystack payment
-  const handlePaystackSuccess = async (paymentData) => {
-    console.log('✅ Payment successful:', paymentData);
-    
-    try {
-      // Record payment in backend
-      await buyerService.recordPayment({
-        amount: paymentData.amount,
-        reference: paymentData.reference,
-        transactionId: paymentData.transactionId,
-        productName: paymentData.productName,
-        orderType: paymentData.order.type
-      });
-      
-      // Refresh data to show updates
-      await refreshData();
-      
-      // Clear cart if it was a cart checkout
-      if (paymentData.order.type === 'cart_checkout') {
-        clearCart();
-      }
-      
-      // Show success message
-      alert(`Payment of KES ${paymentData.amount.toLocaleString()} completed successfully!`);
-      
-    } catch (error) {
-      console.error('Error recording payment:', error);
-      alert('Payment completed but failed to update records. Please contact support.');
-    }
-    
-    setShowPaystack(false);
-    setCurrentOrder(null);
-  };
-
-  // FIXED: Handle section navigation
-  const handleSectionChange = (section) => {
-    console.log('📱 Changing section to:', section);
-    setActiveSection(section);
-  };
-
-  // FIXED: Safe quick stats with fallbacks
-  const quickStats = {
-    activeOrders: dashboardData?.overview?.activeOrders || 0,
-    cartItems: totalItems,
-    savedSuppliers: dashboardData?.overview?.favoriteSuppliersCount || 0,
-    totalSpent: dashboardData?.overview?.totalSpent || 0
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-800 font-semibold">Loading your dashboard...</p>
-          <p className="text-gray-600 text-sm mt-2">Preparing your buying experience</p>
-        </div>
-      </div>
-    );
-  }
-
-  // FIXED: Render section with proper props
+  // Render section with proper props
   const renderSection = () => {
     const commonProps = {
       searchQuery: activeSection === 'discovery' ? searchQuery : '',
       dashboardData: dashboardData,
       onDataUpdate: refreshData,
       usingMockData: usingMockData,
-      onBuyNow: handleBuyNow, // NEW: Pass buy now handler
-      onCheckout: handleCheckout // NEW: Pass checkout handler
+      onBuyNow: handleBuyNow,
+      onCheckout: handleCheckout
     };
 
     switch (activeSection) {
@@ -689,7 +591,7 @@ const BuyerDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Search Bar - FIXED */}
+              {/* Search Bar */}
               <div className="hidden md:block">
                 <form onSubmit={handleSearch} className="relative">
                   <input
@@ -697,7 +599,7 @@ const BuyerDashboard = () => {
                     placeholder="Search products, suppliers..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -707,11 +609,10 @@ const BuyerDashboard = () => {
                 </form>
               </div>
 
-              {/* Notifications - FIXED */}
+              {/* Notifications */}
               <div className="relative">
                 <button 
                   onClick={() => {
-                    console.log('🔔 Toggling notifications');
                     setShowNotifications(!showNotifications);
                     setShowCart(false);
                     setShowUserMenu(false);
@@ -729,11 +630,10 @@ const BuyerDashboard = () => {
                 </button>
               </div>
 
-              {/* Cart - FIXED */}
+              {/* Cart */}
               <div className="relative">
                 <button 
                   onClick={() => {
-                    console.log('🛒 Toggling cart');
                     setShowCart(!showCart);
                     setShowNotifications(false);
                     setShowUserMenu(false);
@@ -751,11 +651,10 @@ const BuyerDashboard = () => {
                 </button>
               </div>
 
-              {/* User Menu with Logout - FIXED */}
+              {/* User Menu */}
               <div className="relative">
                 <button 
                   onClick={() => {
-                    console.log('👤 Toggling user menu');
                     setShowUserMenu(!showUserMenu);
                     setShowNotifications(false);
                     setShowCart(false);
@@ -781,7 +680,7 @@ const BuyerDashboard = () => {
                   </svg>
                 </button>
 
-                {/* User Dropdown Menu - FIXED */}
+                {/* User Dropdown Menu */}
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                     <div className="px-4 py-2 border-b border-gray-100">
@@ -793,7 +692,6 @@ const BuyerDashboard = () => {
                       onClick={() => {
                         setShowUserMenu(false);
                         setActiveSection('payments');
-                        console.log('📱 Navigating to payments');
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                     >
@@ -807,7 +705,6 @@ const BuyerDashboard = () => {
                       onClick={() => {
                         setShowUserMenu(false);
                         setActiveSection('payments');
-                        console.log('⚙️ Navigating to settings');
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                     >
@@ -837,7 +734,16 @@ const BuyerDashboard = () => {
         </div>
       </header>
 
-      {/* Close dropdown when clicking outside - FIXED */}
+      {/* Action Message */}
+      {showActionMessage && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+            {actionMessage}
+          </div>
+        </div>
+      )}
+
+      {/* Close dropdown when clicking outside */}
       {(showUserMenu || showNotifications || showCart) && (
         <div 
           className="fixed inset-0 z-40" 
@@ -851,7 +757,7 @@ const BuyerDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar Navigation - FIXED */}
+          {/* Sidebar Navigation */}
           <nav className="lg:w-64 bg-white rounded-xl shadow-sm p-6 h-fit sticky top-24">
             <ul className="space-y-2">
               {Object.entries(sections).map(([key, { name, icon }]) => (
@@ -873,7 +779,7 @@ const BuyerDashboard = () => {
               ))}
             </ul>
 
-            {/* Quick Stats - FIXED */}
+            {/* Quick Stats */}
             <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <h3 className="font-semibold text-gray-800 mb-3">Quick Stats</h3>
               <div className="space-y-2 text-sm">
@@ -891,16 +797,20 @@ const BuyerDashboard = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Spent:</span>
-                  <span className="font-semibold text-gray-800">KSh {quickStats.totalSpent?.toLocaleString()}</span>
+                  <span className="font-semibold text-gray-800">KES {quickStats.totalSpent?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Monthly Savings:</span>
+                  <span className="font-semibold text-green-600">KES {quickStats.monthlySavings?.toLocaleString()}</span>
                 </div>
               </div>
               {usingMockData && (
                 <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-                  💡 <strong>Live Demo:</strong> Mixed real + sample data
+                  💡 <strong>Live Demo:</strong> Enhanced with sample data
                 </div>
               )}
               
-              {/* Refresh Button - FIXED */}
+              {/* Refresh Button */}
               <button
                 onClick={refreshData}
                 disabled={loading}
@@ -925,7 +835,7 @@ const BuyerDashboard = () => {
         </div>
       </div>
 
-      {/* Notifications Panel - FIXED */}
+      {/* Notifications Panel */}
       {showNotifications && (
         <NotificationsPanel
           notifications={notifications}
@@ -935,25 +845,24 @@ const BuyerDashboard = () => {
         />
       )}
 
-      {/* Shopping Cart - FIXED */}
+      {/* Shopping Cart */}
       {showCart && (
         <ShoppingCart
           onClose={() => setShowCart(false)}
-          onCheckout={handleCheckout} // UPDATED: Use new checkout handler
+          onCheckout={handleCheckout}
         />
       )}
 
-      {/* REAL Paystack Payment Modal */}
-      {showPaystack && currentOrder && (
+      {/* ✅ OPTIMIZED: Unified Paystack Payment Modal */}
+      {showPaymentModal && paymentConfig && (
         <PaystackPayment
-          order={currentOrder}
-          amount={paymentAmount}
-          productName={paymentProduct}
-          onSuccess={handlePaystackSuccess}
-          onClose={() => {
-            setShowPaystack(false);
-            setCurrentOrder(null);
-          }}
+          amount={paymentConfig.amount}
+          email={paymentConfig.email}
+          productName={paymentConfig.productName}
+          description={paymentConfig.description}
+          userType={paymentConfig.userType}
+          onSuccess={handlePaymentSuccess}
+          onClose={() => setShowPaymentModal(false)}
         />
       )}
     </div>
